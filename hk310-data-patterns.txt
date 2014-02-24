@@ -1,3 +1,16 @@
+Open questions:
+- What is the content of the EEPROM?
+- How does the module determine whether it is HK300 or HK310?
+- How is the bind code related to what we find in the receiver?
+- Any differences in the X3S?
+- What is the timing of stick data to the NRF module?
+- What is the timing with which stick data propagates to the receiver?
+- How do the stick values translate into pulse width on the receiver?
+- What resolution can we reliably achieve?
+- what do the remaining bits of the startup sequence mean? Compare them with 
+  other transmitters!
+
+
 #################
 Stick data:
 
