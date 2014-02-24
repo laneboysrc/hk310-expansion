@@ -1,14 +1,28 @@
 Open questions:
-- What is the content of the EEPROM?
-- How does the module determine whether it is HK300 or HK310?
-- How is the bind code related to what we find in the receiver?
-- Any differences in the X3S?
+- Is the TX sending data at all?
 - What is the timing of stick data to the NRF module?
 - What is the timing with which stick data propagates to the receiver?
 - How do the stick values translate into pulse width on the receiver?
 - What resolution can we reliably achieve?
 - what do the remaining bits of the startup sequence mean? Compare them with 
   other transmitters!
+
+
+Note: the RF module firmware differs between HK300 and HK310
+Also the X3S seems to have different firmware as the EEPROM ports are different!
+I have not examined the serial protocol of the X3S yet to see if it is different
+as well
+
+
+
+******************************************************************************
+******************************************************************************
+*** SERIAL PORT
+******************************************************************************
+******************************************************************************
+
+The serial port runs at 19200,N,8,1
+The RX pin (input to the NRF) is pin 1 of the module 
 
 
 #################
@@ -123,5 +137,25 @@ UINT16 crcByte(UINT16 crc, UINT8 b)
 
     return crc;
 }
+
+
+
+******************************************************************************
+******************************************************************************
+*** EEPROM CONTENTS
+******************************************************************************
+******************************************************************************
+
+The EEPROM connected to P0.7 and P1.0 contains binding data.
+There is a 25 byte code for each model, starting at address 0.
+These 25 bytes correspond with the data we read from the EEPROM in the
+receiver.
+
+Note that 6 bytes contain actual code, the rest are padding, incrementing
+from the last code byte value onwards. Note sure if only the first 6 
+bytes are transmitted over the air, or all 25 bytes.
+
+Furthermore, address 0x19a and 0x19b contain the value 0xaa. It is not known 
+whether this information is used, but it is present in both HK310 and X3S.
 
 
