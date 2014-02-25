@@ -15,14 +15,13 @@
 import serial
 import sys
 
-STARTUP_MODE_NEUTRAL = 4
 
 def stickCommand(data):
     h = data[4] & 0x0f
     l = data[6]
     st = (h << 8) + l
     
-    h = (data[5] & 0xf0 ) >> 4
+    h = data[5] >> 4
     l = data[7]
     th = (h << 8) + l
     
@@ -34,7 +33,7 @@ def stickCommand(data):
     if crc16_ccitt(data[3:9]) != ((data[9] << 8) + data[10]):
         error = "ERROR: CRC16 does not match"
     
-    #print "st=%04d th=%04d ch3=%04d  %s" % (st, th, ch3, error) 
+    print "st=%04d  th=%04d  ch3=%04d  %s" % (st, th, ch3, error) 
 
 
 def failsafeCommand(data):
@@ -53,11 +52,11 @@ def failsafeCommand(data):
     if mode & 0x01: 
         stEnabled = "on "
 
-    print "FAILSAFE: st=%4d%%, %s   th=%4d%%, %s  %s" % (st, stEnabled, th, thEnabled, error) 
-                            
-    #for i in (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
-    #    print "%02x " %  (data[i], ), 
-    #print error
+    print "FAILSAFE: st=%4d%%, %s  th=%4d%%, %s  %s" % (st, stEnabled, th, thEnabled, error) 
+
+
+def modelCode(data);
+    print "Model code: ", ' '.join(["%02x" %  data[i] for i in range(15)])
 
 
 def preprocessor_reader(port):
@@ -82,27 +81,23 @@ def preprocessor_reader(port):
                     if checksum != ((data[13] << 8) + data[14]):
                         print "SERIAL CHECKSUM ERROR"                    
 
-                    elif data[4] & 0xf0 == 0xa0:
+                    elif data[3] == 0xaa:
                         stickCommand(data)
                     
-                    elif data[4] & 0xf0 == 0xb0:
+                    elif data[3] == 0xbb:
                         failsafeCommand(data)
 
                     else:
                         print "Unknown command 0x%1x" % data[4] >> 4
 
                 elif data[1] == 0xaa  and  data[2] == 0x55:
-                    print "STARTUP: ",
-                    for i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
-                        print "%02x " %  data[i], 
-                    print
+                    modelCode(data)
                 else:
                     print "Unknown command header: ",
-                    for i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14):
-                        print "%02x " %  data[i], 
-                    print
+                    print ' '.join(["%02x" %  data[i] for i in range(15)])
 
                 data = []
+
 
 def crc16_ccitt(data):
     crc = 0
