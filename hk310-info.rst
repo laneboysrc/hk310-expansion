@@ -1,19 +1,9 @@
 Open questions:
 
-- Model data: is there a checksum? What is the meaning of the bytes?
-- Is the TX sending data at all?
-- What is the timing of stick data to the NRF module?
 - What is the timing with which stick data propagates to the receiver?
-- How do the stick values translate into pulse width on the receiver?
 - What resolution can we reliably achieve?
-- what do the remaining bits of the startup sequence mean? Compare them with 
-  other transmitters!
-- How does the failsafe percentage translate into output?
 
-Note: the RF module firmware differs between HK300 and HK310
-Also the X3S seems to have different firmware as the EEPROM ports are different!
-I have not examined the serial protocol of the X3S yet to see if it is different
-as well
+
 
 
 
@@ -66,6 +56,7 @@ The X3S uses different pins to connect to the EEPROM:
 - P1.1 = SDA
 - P1.3 = SCL
 
+The RF module firmware differs between HK300 and HK310 as well.
 
 
 SERIAL PORT
@@ -95,8 +86,14 @@ The Stick data a Failsafe packet structure is as follows:
                 or buttons you press.
 :Bytes 13, 14:  16-bit sum of bytes 3 to 10, MSB first
 
-The first byte of the payload (byte 3) determines whether the packet contains
-Stick data (``aa``) or Failsafe (``bb``).
+The first payload byte is always ``aa``. The high nibble of byte 4 is `a` for
+Stick data or `b` for Failsafe.
+
+Packets that are of type Stick data and Failsafe are repeated every **13.28ms**
+(75.3Hz).
+Note that this does not match the output rate of the receiver, which is 16ms 
+(62.5Hz).
+For other packet timings see below.
 
 
 
@@ -161,14 +158,12 @@ Stick data
 Each channel is a 12 bit number. The highest nibbles are packed in bytes
 4 and 5, the low bytes are in bytes 6..8. 
 
-It seems that the value being transmitted is offset by 350 us in the receiver.
-For example, a value of 650 translates to a 1000 us pulse being output, a value
-of 1650 outputs a 2000 us pulse. 
+The value being transmitted is offset by 350us in the receiver.
+For example, a value of 650 translates to a 1000us pulse being output, a value
+of 1650 outputs a 2000us pulse. 
 
 This would mean that the full range 0..fff translates into pulses between
-350 and 4445 us. Worst case, 3 channels times 4.445 ms would be 13.34 ms, which
-seems to be the repetition rate of which the microcontroller sends information
-to the NRF module. The receiver outputs information with 62.5 Hz though.
+350 and 4445us. Worst case, 3 channels times 4.445ms would be 13.34ms.
 
 
 
@@ -177,7 +172,7 @@ Failsafe
 
 Failsafe packets are only sent if the failsafe function is enabled. 
 
-Failsafe packets are transmitted after every 12 stick data transmissions.
+Failsafe packets are transmitted after every 14 stick data transmissions.
 
 ::
 
@@ -197,7 +192,14 @@ Failsafe packets are transmitted after every 12 stick data transmissions.
             bit 0: steering
             bit 1: throttle
             bit 2: always 1 (CH3?)
+
+
+The percentage value translates into the following pulse timings on the
+respective servo output::
             
+    +120%   +100%       0%    -100%    -120%
+     784us   904us   1540us   2120us   2240us
+
 
 
 Model number
@@ -205,8 +207,12 @@ Model number
 
 This packet is sent after power on and every time a model is changed.
 
-It is repeated 3 times, and often disrupts an ongoing transmission, causing CRC 
-errors.
+It is repeated 3 times every 46.4ms, and often disrupts an ongoing 
+transmission, causing CRC errors -- which is most likely the reason for
+repeating it three times.
+
+Changing a model takes 197.3ms, then 3 model number commands are sent,
+and then the first Stick data (or Failsafe) packet after 168.1ms.
 
 ::
 
@@ -219,7 +225,7 @@ errors.
 
 
 :mm:     model code. mod0 = 0x02, mod15 = 0x11
-:rest:   unknown
+:rest:   unknown, but constant data independent of the model number
 
 The model code serves as index into the code data stored in the EEPROM
 that is connected to the NRF module.

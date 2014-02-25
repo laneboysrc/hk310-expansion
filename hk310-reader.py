@@ -14,6 +14,20 @@
 
 import serial
 import sys
+import time
+
+lastTime = time.time()
+avgValue = 0;
+avgCount = 0;
+
+def timeStamp():
+    global lastTime, avgCount, avgValue
+    now = time.time()
+    diff_us = int((now - lastTime) * 1000000)
+    #print "%08d -> " % (diff_us, ),
+    lastTime = now
+    avgValue += diff_us
+    avgCount += 1
 
 
 def stickCommand(data):
@@ -33,6 +47,7 @@ def stickCommand(data):
     if crc16_ccitt(data[3:9]) != ((data[9] << 8) + data[10]):
         error = "ERROR: CRC16 does not match"
     
+    timeStamp()
     print "st=%04d  th=%04d  ch3=%04d  %s" % (st, th, ch3, error) 
 
 
@@ -52,11 +67,14 @@ def failsafeCommand(data):
     if mode & 0x01: 
         stEnabled = "on "
 
+    timeStamp()
     print "FAILSAFE: st=%4d%%, %s  th=%4d%%, %s  %s" % (st, stEnabled, th, thEnabled, error) 
 
 
-def modelCode(data);
-    print "Model code: ", ' '.join(["%02x" %  data[i] for i in range(15)])
+def modelCode(data):
+    modelCode = data[4]
+    timeStamp()
+    print "Model code: %d (mod%02d)" % (modelCode, modelCode - 2)
 
 
 def preprocessor_reader(port):
@@ -81,10 +99,10 @@ def preprocessor_reader(port):
                     if checksum != ((data[13] << 8) + data[14]):
                         print "SERIAL CHECKSUM ERROR"                    
 
-                    elif data[3] == 0xaa:
+                    elif data[4] & 0xf0 == 0xa0:
                         stickCommand(data)
                     
-                    elif data[3] == 0xbb:
+                    elif data[4] & 0xf0 == 0xb0:
                         failsafeCommand(data)
 
                     else:
@@ -124,4 +142,5 @@ if __name__ == '__main__':
         preprocessor_reader(port)
     except KeyboardInterrupt:
         print("")
+        print "Average time between commands: %d ms" % (avgValue / avgCount)
         sys.exit(0)
