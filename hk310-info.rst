@@ -6,7 +6,6 @@ Open questions:
 
 
 
-
 NRF MODULE PIN-OUT
 ===============================================================================
 
@@ -58,11 +57,21 @@ The X3S uses different pins to connect to the EEPROM:
 
 The RF module firmware differs between HK300 and HK310 as well.
 
+P1.4 (Tx-Off?) goes to the amplifier chip in the NRF module. It has short pulses
+that repeat with about 200Hz. Speculation: this may be a kind of enable 
+signal to the amplifier, turning it on only when the NRF chip actually sends
+packets to preserve power. 
+
+
 
 SERIAL PORT
 ===============================================================================
 
 The serial port runs at **19200,N,8,1**.
+
+Data is only sent **to** the NRF module. The Tx line of the NRF module
+is connected to the microcontroller in the transmitter, but there is no
+data being sent at all.
 
 Data is sent to the NRF module in **packets of 15 bytes**. The first three bytes
 indicate the packet type. There are two packet types in use:
