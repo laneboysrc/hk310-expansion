@@ -16,7 +16,7 @@ import serial
 import sys
 import time
 
-new_ch3 = 2500
+new_ch3 = 1650
 
 def crc16_ccitt(crc, byte):
     """ Add a byte to the CRC16-CCITT checksum.
@@ -57,6 +57,8 @@ def hk310_filter(port):
     STATE_CHECKSUM_H = 13    
     STATE_CHECKSUM_L = 14    
     STATE_SKIP = 99
+
+    count = 0
 
     state = STATE_WAIT_FOR_SYNC
     while True:
@@ -197,9 +199,13 @@ def hk310_filter(port):
         
         s.write(chr(b))
         
-        #new_ch3 = new_ch3 + 1
-        #if new_ch3 > 0x7ff:
-        #    new_ch3 = 0
+        if count < 200:
+            count += 1
+        else:
+            count = 0
+            new_ch3 = new_ch3 + 150
+            if new_ch3 > 1650:
+                new_ch3 = 650
 
 
 if __name__ == '__main__':
