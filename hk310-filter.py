@@ -16,7 +16,7 @@ import serial
 import sys
 import time
 
-new_ch3 = 0x000
+new_ch3 = 2500
 
 def crc16_ccitt(crc, byte):
     """ Add a byte to the CRC16-CCITT checksum.
@@ -33,6 +33,8 @@ def crc16_ccitt(crc, byte):
 
 
 def hk310_filter(port):
+    global new_ch3
+    
     try:
         s = serial.Serial(port, 19200)
     except serial.SerialException, e:
@@ -143,7 +145,7 @@ def hk310_filter(port):
             crc16 = crc16_ccitt(crc16, b)
             
             # Low byte of CH3
-            b = new_ch3 & 0x0ff
+            b = new_ch3 & 0xff
             
             state = STATE_CRC_H
             new_checksum = new_checksum + b
@@ -193,7 +195,11 @@ def hk310_filter(port):
             if skip == 0:
                 state = STATE_WAIT_FOR_SYNC
         
-        s.write(b)
+        s.write(chr(b))
+        
+        #new_ch3 = new_ch3 + 1
+        #if new_ch3 > 0x7ff:
+        #    new_ch3 = 0
 
 
 if __name__ == '__main__':

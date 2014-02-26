@@ -160,12 +160,29 @@ Stick data
 Each channel is a 12 bit number. The highest nibbles are packed in bytes
 4 and 5, the low bytes are in bytes 6..8. 
 
-The value being transmitted is offset by 350us in the receiver.
-For example, a value of 650 translates to a 1000us pulse being output, a value
-of 1650 outputs a 2000us pulse. 
+value pulse_us
+0 2750
+100 2650
+200 2550
+400 2350
+700 2050
+900 1850
+1000 1650
+1100 1550
+1150 1500
+1200 1450
+1400 1250
+1600 1050
+1800 820
+2000 600
+2200 380
+2400 176
+2500 68
+2528 40
+2559 10
 
-This implies that the full range ``0..fff`` translates into pulses between
-350 and 4445us. Worst case (three channels times 4.445ms) would be 13.34ms.
+0xa00 is a value of 2560 -> overflow, wrap around
+
 
 
 ::
