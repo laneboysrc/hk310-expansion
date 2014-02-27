@@ -19,7 +19,7 @@ static void Init_hardware(void) {
     //-----------------------------
     // Clock initialization
     // FIXME: do 32 MHz HW
-    OSCCON = 0b01111010;    // 4x PLL disabled, 16 MHz HF, Internal oscillator
+    OSCCON = 0b11110000;    // 32MHz: 4x PLL enabled, 8 MHz HF, Clock determined by FOSC<2:0>
 
     //-----------------------------
     // IO Port initialization
@@ -27,9 +27,13 @@ static void Init_hardware(void) {
     PORTA = 0;
     LATA = 0;
     ANSELA = 0;
-    TRISA = 0b11101000;     // Make all ports that are not used for the motor input
+    APFCON0 = 0b10001000;   // Use RC4/RA1 for UART TX/RX; RA3 for T1G
+    APFCON1 = 0;    
+    TRISA = 0b11111111;     // Make all ports A input
+    TRISC = 0b11111111;     // Make all ports C input
+    
+    INTCON = 0;
 }
-
 
 /*****************************************************************************
  main()
