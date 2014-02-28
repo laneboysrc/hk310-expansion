@@ -7,13 +7,11 @@
  Called once during start-up of the firmware. 
  ****************************************************************************/
 void Init_input(void) {
-    // FIXME: Timer 1 at max speed; Single pulse gate mode
-
     TMR1H = 0;
     TMR1L = 0;
     
     T1GCON = 0b11010000;   // Single shot gate mode
-    T1CON = 0b01000001;     // Timer1 runs on Fosc; Timer enabled
+    T1CON = 0b00100001;    // Timer1 runs on Fosc/4; 1:4 pre-scaler; Timer enabled
 }
 
 
