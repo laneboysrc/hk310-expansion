@@ -1,3 +1,8 @@
 *~
 *.rst.html
+firmware/**/*.asm
+firmware/**/*.cod
+firmware/**/*.hex
+firmware/**/*.o
+firmware/**/*.lst
 
