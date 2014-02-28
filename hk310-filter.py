@@ -16,7 +16,13 @@ import serial
 import sys
 import time
 
-new_ch3 = 1650
+val1 = 0x24a
+val2 = 0x205
+val3 = 0xf3
+
+new_ch3 = val1
+disableLoop = 0
+
 
 def crc16_ccitt(crc, byte):
     """ Add a byte to the CRC16-CCITT checksum.
@@ -190,7 +196,18 @@ def hk310_filter(port):
 
             b = checksum & 0xff
             state = STATE_WAIT_FOR_SYNC
-            print "Packet successfully filtered"
+            #print "Packet successfully filtered"
+            if count < 3:
+                count += 1
+            else:
+                count = 0;
+                if not disableLoop:
+                    if new_ch3 == val1:
+                        new_ch3 = val2
+                    elif new_ch3 == val2:
+                        new_ch3 = val3
+                    else:
+                        new_ch3 = val1
                 
         elif state == STATE_SKIP:
             skip = skip - 1
@@ -199,13 +216,6 @@ def hk310_filter(port):
         
         s.write(chr(b))
         
-        if count < 200:
-            count += 1
-        else:
-            count = 0
-            new_ch3 = new_ch3 + 150
-            if new_ch3 > 1650:
-                new_ch3 = 650
 
 
 if __name__ == '__main__':
@@ -218,5 +228,5 @@ if __name__ == '__main__':
         hk310_filter(port)
     except KeyboardInterrupt:
         print ""
-        print "Average time between commands: %d ms" % (avgValue / avgCount)
+        #print "Average time between commands: %d ms" % (avgValue / avgCount)
         sys.exit(0)
