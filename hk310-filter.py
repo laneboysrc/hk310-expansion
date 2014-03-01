@@ -16,12 +16,29 @@ import serial
 import sys
 import time
 
-val1 = 0x24a
-val2 = 0x205
-val3 = 0xf3
+values = [
+    0xa0,
+    0x80,
+    0x40,
+    0x20,
+    0x10,
+    0x08,
+    0x04,
+    0x02,
+    0x01,
+    0x02,
+    0x04,
+    0x08,
+    0x20,
+    0x40,
+    0x80,
+]
 
-new_ch3 = val1
+
+new_ch3 = values[0]
 disableLoop = 0
+
+cur_value = 0
 
 
 def crc16_ccitt(crc, byte):
@@ -40,6 +57,8 @@ def crc16_ccitt(crc, byte):
 
 def hk310_filter(port):
     global new_ch3
+    global cur_value
+    global values
     
     try:
         s = serial.Serial(port, 19200)
@@ -202,12 +221,15 @@ def hk310_filter(port):
             else:
                 count = 0;
                 if not disableLoop:
-                    if new_ch3 == val1:
-                        new_ch3 = val2
-                    elif new_ch3 == val2:
-                        new_ch3 = val3
-                    else:
-                        new_ch3 = val1
+                    cur_value = cur_value + 1
+                    if cur_value == len(values):
+                        cur_value = 0
+                    
+                    rx_desired = values[cur_value] << 4
+                    if rx_desired >= 0x700:
+                        rx_desired += 2     # Above 0x700 add 2 for better stability! 
+                    rx = (2719 - rx_desired)
+                    new_ch3 = rx  * 16 / 17
                 
         elif state == STATE_SKIP:
             skip = skip - 1
