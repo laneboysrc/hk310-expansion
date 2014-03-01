@@ -25,27 +25,29 @@ jitterString0x07 = [
 ]
 
 jitterString0x0f = [
-    '|*      ..       |',
-    '| *     ..       |',
-    '|  *    ..       |',
-    '|   *   ..       |',
-    '|    *  ..       |',
-    '|     * ..       |',
-    '|      *..       |',
+#     0123456789abcdef
+    '|*       .       |',
+    '| *      .       |',
+    '|  *     .       |',
+    '|   *    .       |',
+    '|    *   .       |',
+    '|     *  .       |',
+    '|      * .       |',
     '|       *.       |',
-    '|       .*       |',
-    '|       ..*      |',
-    '|       .. *     |',
-    '|       ..  *    |',
-    '|       ..   *   |',
-    '|       ..    *  |',
-    '|       ..     * |',
-    '|       ..      *|'
+    '|        *       |',
+    '|        .*      |',
+    '|        . *     |',
+    '|        .  *    |',
+    '|        .   *   |',
+    '|        .    *  |',
+    '|        .     * |',
+    '|        .      *|'
 ]
 
 def int2bin(n, count=32):
     """returns the binary of integer n, using count number of digits"""
-    return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])
+    chars = [' ', '1']
+    return "".join([chars[(n >> y) & 1] for y in range(count-1, -1, -1)])
 
 def dump(port):
     try:
@@ -58,6 +60,12 @@ def dump(port):
     oldData = 0
     startTime = time.time()
     bigDiff = False
+    glitch = " "
+    
+    diffs = []
+    for _ in range(4):
+        diffs.append(0xa04)
+    
     while True:
         c = s.read(1)
         numString = ""
@@ -69,28 +77,49 @@ def dump(port):
             value = int(numString, 10)
         except ValueError:
             value = 0
+
+        jitter = value & 0xf
+        print jitterString0x0f[jitter],
+
         if abs(oldValue - value) > 4:
-            #print  abs(oldValue - value)
-            if bigDiff or abs(oldValue - value) > 32:
+            #print  abs(oldValue - value),
+            if bigDiff or abs(oldValue - value) > 7:
                 oldValue = value
                 bigDiff = False
+                print "B ",
             else:
                 bigDiff = True
-                #print "GLITCH", abs(oldValue - value)
+                print "G ",
         else:
-            oldValue = value
-            #print "%s  %d" % (int2bin(value >> 3, 7), value & 0x7)
+            print "  ",
+
+            if value > 0x880:            
+                diffs.pop(0)
+                diffs.append(value)
+                avg = 0
+                for d in diffs:
+                    avg += d
+                avg = (avg) / len(diffs)
+                print "avg=%3x " % (avg, ),
+            else:
+                print "        ",
             
-            jitter = value & 0x7
-            print jitterString0x07[jitter],
-            
-            data = value >> 3
+                        
+            data = value >> 4
+            print " 0x%03x 0x%02x" % (value, data),
             if oldData != data:
                 now = time.time()
-                print "%3d %s" % (int((now - startTime) * 1000), int2bin(data, 6)),
+                print "%3dms  %s" % (int((now - startTime) * 1000), int2bin(data, 8)),
+                print "  0x%02x" % (data, ),
                 startTime = now
+                glitch = " "
+
+
+            oldValue = value
             oldData = data
-            print
+
+        print
+
 
 
 if __name__ == '__main__':
