@@ -1,12 +1,14 @@
 #include <pic16f1825.h>
 
-static unsigned char tx_value;
+#define SPBRG_VALUE 104     // 38400 @ 16 MHz
 
-static unsigned int val;
+void UART_send(void);
+void UART_send_uint(void);
 
-#define SPBRG_VALUE 104
+unsigned char tx_value;
+unsigned int tx_uint;
 
-static void UART_send(void);
+extern unsigned char locked;
 
 /*****************************************************************************
  Init_output()
@@ -31,12 +33,19 @@ void Init_output(void) {
 /*****************************************************************************
  Output_result()
 
- FIXME: implement and document
+ Outputs the timer 1 value as decimal number, including leading zeros
  ****************************************************************************/
 void Output_result(void) {
+    if (! locked) {
+        return;
+    }
+
+    tx_uint = (TMR1H << 8) + TMR1L;
+    UART_send_uint();
+    
+#if 0
     val = (TMR1H << 8) + TMR1L;
 
-#if 0
     tx_value = val & 0x0800 ? '1' : '0';
     UART_send();
 
@@ -76,62 +85,50 @@ void Output_result(void) {
     tx_value = val & 0x0001 ? '1' : '0';
     UART_send();
 #endif
+}
 
 
+/*****************************************************************************
+ Send tx_uint as decimal number with leading zeros out via the UART
+ ****************************************************************************/
+void UART_send_uint(void) {
     tx_value = 0;
-    while (val >= 9999) {
-        val -= 10000;
+    while (tx_uint >= 9999) {
+        tx_uint -= 10000;
         ++tx_value;
     }
     tx_value += '0';
     UART_send();
 
     tx_value = 0;
-    while (val >= 1000) {
-        val -= 1000;
+    while (tx_uint >= 1000) {
+        tx_uint -= 1000;
         ++tx_value;
     }
     tx_value += '0';
     UART_send();
 
     tx_value = 0;
-    while (val >= 100) {
-        val -= 100;
+    while (tx_uint >= 100) {
+        tx_uint -= 100;
         ++tx_value;
     }
     tx_value += '0';
     UART_send();
 
     tx_value = 0;
-    while (val >= 10) {
-        val -= 10;
+    while (tx_uint >= 10) {
+        tx_uint -= 10;
         ++tx_value;
     }
     tx_value += '0';
     UART_send();
 
-    tx_value = val + '0';
+    tx_value = tx_uint + '0';
     UART_send();
 
     tx_value = '\n';
     UART_send();
-
-#if 0    
-    for (val = 0; val < 65500; val++) {
-        val = val - 33;
-        val = val + 42;
-        val = val - 145;
-        val = val + 33;
-        val = val - 42;
-        val = val + 145;
-        val = val - 33;
-        val = val + 42;
-        val = val - 145;
-        val = val + 33;
-        val = val - 42;
-        val = val + 145;
-    }
-#endif    
 }
 
 
@@ -139,9 +136,8 @@ void Output_result(void) {
  Send tx_value out via the UART
  ****************************************************************************/
 void UART_send(void) {
-    /* Wait for TSR register being empty */
+    // Wait for TSR register being empty, then send the character in tx_value
     while (!TRMT);
- 
     TXREG = tx_value;  
 }
 

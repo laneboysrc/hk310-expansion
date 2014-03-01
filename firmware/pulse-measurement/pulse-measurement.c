@@ -20,9 +20,17 @@ static void Init_hardware(void) {
     // Clock initialization
     OSCCON = 0b01111000;    // 16MHz: 4x PLL disabled, 8 MHz HF, Clock determined by FOSC<2:0>
 
+                            // Value of a00 reads back:
+    //OSCTUNE = 0b001010;     //a00
+    //OSCTUNE = 0b001011;     //a04
+    //OSCTUNE = 0b001110;     //a0a
+
+    //OSCTUNE = 0b011111;     // max freq  a3c
+    //OSCTUNE = 0b000000;     // nominal:  9e5 
+    //OSCTUNE = 0b100000;     // min freq: 990
+
     //-----------------------------
     // IO Port initialization
-    // FIXME: do 16F1825 ports
     PORTA = 0;
     LATA = 0;
     ANSELA = 0;
@@ -49,4 +57,7 @@ void main(void) {
         Output_result();
     }
 }
+
+
+
 
