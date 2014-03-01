@@ -2,13 +2,18 @@
 
 #define SPBRG_VALUE 104     // 38400 @ 16 MHz
 
+extern unsigned char data;
+extern struct {
+    unsigned locked : 1;
+    unsigned dataChanged : 1;
+} flags;
+
 void UART_send(void);
 void UART_send_uint(void);
-
+void UART_send_uchar(void);
 unsigned char tx_value;
 unsigned int tx_uint;
 
-extern unsigned char locked;
 
 /*****************************************************************************
  Init_output()
@@ -36,55 +41,12 @@ void Init_output(void) {
  Outputs the timer 1 value as decimal number, including leading zeros
  ****************************************************************************/
 void Output_result(void) {
-    if (! locked) {
+    if (!flags.dataChanged) {
         return;
     }
 
-    tx_uint = (TMR1H << 8) + TMR1L;
-    UART_send_uint();
-    
-#if 0
-    val = (TMR1H << 8) + TMR1L;
-
-    tx_value = val & 0x0800 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0400 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0200 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0100 ? '1' : '0';
-    UART_send();
-
-    tx_value = ' ';
-    UART_send();
-
-    tx_value = val & 0x0080 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0040 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0020 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0010 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0008 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0004 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x00012 ? '1' : '0';
-    UART_send();
-
-    tx_value = val & 0x0001 ? '1' : '0';
-    UART_send();
-#endif
+    tx_uint = data;
+    UART_send_uchar();
 }
 
 
@@ -107,7 +69,17 @@ void UART_send_uint(void) {
     }
     tx_value += '0';
     UART_send();
+    
+     UART_send_uchar();
+}
 
+
+/*****************************************************************************
+ Send (unsigned char)tx_uint as decimal number with leading zeros out via the UART
+ ****************************************************************************/
+void UART_send_uchar(void) {
+    tx_uint = tx_uint & 0xff;
+    
     tx_value = 0;
     while (tx_uint >= 100) {
         tx_uint -= 100;
