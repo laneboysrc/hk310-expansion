@@ -162,24 +162,23 @@ protocol. This is done by ensuring that no **consecutive** values are the same.
   any value between 0x00 and 0x7f. 
 
 - PAYLOAD2_6 .. PAYLOADn_6 have bits 0..5 dedicated to the  
-  payload. Bit 6 is the inverse of bit 6 of the **previous** value 
-  (e.g. PAYLOAD2_6.6 = ~PAYLOAD1_7.6, PAYLOAD3_6.6 = ~PAYLOAD2_6.6).
-  
-  Bit 6 was chosen so that neighboring values have a large difference, which
-  makes the glitch detector easier and more reliable.
+  payload. Bit 6 is chosen as that the difference with the previous 7-bit 
+  value is as large as possible. With this algorithm we have a difference of
+  at least 512us (0x200) between neighboring values, which helps with 
+  detecting and recovering from glitches.
   
 Because we have to deal with glitches and asynchronicity, the transmitter is
-repeating every value 3 times. This means the response time of the 
+repeating every value 2 times. This means the response time of the 
 received values is as follows:
 
 SYNC + 1 payload (7 bits)
-        ~110-125ms
+        ~79-96ms
 
 SYNC + 2 payload (13 bits)
-        ~170-190ms
+        ~95-144ms
 
 SYNC + 3 payload (19 bits)
-        ~220-240ms
+        ~159-193ms
 
 (approx 60ms per value)
 
@@ -192,7 +191,7 @@ The payload can transmit any kind of data, so it is possible to use a number
 of bits in the payload and use them to generate a servo pulse. 
 
 One has to consider resolution and response time. As described in the previous
-section, the response time is as low as 240ms for a 19-bit total payload. 
+section, the response time is as low as 200ms for a 19-bit total payload. 
 This means that the servo will follow the input with a very significant delay,
 and large jumps -- certainly not useful for steering or throttle, but possibly
 suitable for auxillary functions like the nozzle on a firetruck.
