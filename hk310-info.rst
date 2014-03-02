@@ -3,14 +3,6 @@ HobbyKing HK310 and Turnigy X-3S deep-dive
 
 
 
-Open questions
-===============================================================================
-
-- What is the timing with which stick data propagates to the receiver?
-- What resolution can we reliably achieve?
-
-
-
 Introduction
 ===============================================================================
 
@@ -153,6 +145,10 @@ The checksum is calculated over the payload bytes 3..8, and is stored in
 bytes 9 (MSB) and 10 (LSB).
 
 
+Unfortunately neither checksum are verified at the receiving end. Sending
+bogus values still makes the system work fine :(
+
+
 
 Stick data
 ---------------------------------------
@@ -160,29 +156,23 @@ Stick data
 Each channel is a 12 bit number. The highest nibbles are packed in bytes
 4 and 5, the low bytes are in bytes 6..8. 
 
-value pulse_us
-0 2750
-100 2650
-200 2550
-400 2350
-700 2050
-900 1850
-1000 1650
-1100 1550
-1150 1500
-1200 1450
-1400 1250
-1600 1050
-1800 820
-2000 600
-2200 380
-2400 176
-2500 68
-2528 40
-2559 10
+Channel values 0x000 to 0x9ff generate a valid output pulse. Values above
+0x9ff create a very long pulse that does not change with the value.
 
-0xa00 is a value of 2560 -> overflow, wrap around
+The forumla of how to determine the resulting pulse based on a given channel
+value is as follows::
 
+    rx_pulse = (tx_value - 2560) * 17 / 16
+
+And to calculate a channel value for a desired pulse length::
+
+    tx_value = (2720 - rx_pulse) * 16 / 17
+
+
+The generated pulses are unfortunately not very precise. There is a jitter
+of about +/-2us. Furthermore, every now and then there are glitches making
+the pulses longer. In reality it means that the lower 4 bits are not usable
+for reliable transmission of binary data. 
 
 
 ::
