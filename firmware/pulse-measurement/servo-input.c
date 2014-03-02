@@ -51,6 +51,8 @@ void Read_input(void) {
     static char bigDiff = 0;
     static unsigned int oldValue = 0xa04;
     static unsigned char oldData = 0xff;
+
+    flags.dataChanged = 0;
     
     TMR1H = 0;              // Clear the timer
     TMR1L = 0;
@@ -60,7 +62,7 @@ void Read_input(void) {
     while (T1GGO);         // Wait for the measurement to be finished
 
     
-    value = (TMR1H << 8) | TMR1L;
+    value = (TMR1H << 8) + TMR1L;
 
 
     /* Glitch eliminator
@@ -85,6 +87,7 @@ void Read_input(void) {
         }
         return;
     }
+    oldValue = value;
     
     
     /* Extract bits 11:4, which contain the payload. If we are locked and it
@@ -95,8 +98,6 @@ void Read_input(void) {
         flags.dataChanged = 1;
     }
     oldData = data;
-    oldValue = value;
-
     
     
     /* If we receive a value > 0x880 then it can only be the special value
@@ -112,7 +113,7 @@ void Read_input(void) {
     for (i = 0; i < NUM_AVERAGES - 1; i++) {
         avg[i] = avg[i + 1];
     }
-    avg[i] = (TMR1H << 8) + TMR1L;
+    avg[i] = value;
 
     if (wait) {
         --wait;
@@ -143,7 +144,7 @@ void Read_input(void) {
                 OSCTUNE = (OSCTUNE + 1) & 0x3f;
             }
         }
-        if (value > 0xa06) {
+        else {
             if ((value - 0xa04) > 15) {
                 OSCTUNE = (OSCTUNE - 10) & 0x3f;
                 flags.locked = 0;
