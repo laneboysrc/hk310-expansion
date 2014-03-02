@@ -229,7 +229,7 @@ def hk310_filter(port):
                     rx_desired = values[cur_value] << 4
                     if rx_desired >= 0x700:
                         rx_desired += 2     # Above 0x700 add 2 for better stability! 
-                    rx = (2719 - rx_desired)
+                    rx = (2720 - rx_desired)
                     new_ch3 = rx  * 16 / 17
                 
         elif state == STATE_SKIP:
