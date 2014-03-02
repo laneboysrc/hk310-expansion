@@ -18,21 +18,9 @@ import time
 
 values = [
     0xa0,
-    0x80,
-    0x40,
-    0x20,
-    0x10,
-    0x08,
-    0x04,
+    0x0f,
     0x02,
-    0x01,
-    0x02,
-    0x04,
-    0x08,
-    0x10,
-    0x20,
-    0x40,
-    0x80,
+    0x00
 ]
 
 
@@ -41,6 +29,39 @@ disableLoop = 0
 
 cur_value = 0
 
+
+
+def prepareValues():
+    # Sanitize values    
+    for i, _ in enumerate(values):
+        if i == 1:
+            values[i] = values[i] & 0x7f
+        elif i>= 2: 
+            values[i] = values[i] & 0x3f
+            new = values[i]
+            old = values[i - 1]
+            # Maximize the difference between adjacent values
+            # This results in a minimum difference of 0x20
+            if abs(old - new) < abs(old - (new | 0x40)):
+                new = new | 0x40
+            values[i] = new
+
+    for i, _ in enumerate(values):
+        print nextValue(i)
+
+
+
+def nextValue(idx):
+    global values
+
+        
+    rx_desired = values[idx] << 4
+    if rx_desired >= 0x700:
+        rx_desired += 2     # Above 0x700 add 2 for better stability! 
+    rx = 2720 - 1 - rx_desired
+    return rx  * 16 / 17
+
+prepareValues()
 
 def crc16_ccitt(crc, byte):
     """ Add a byte to the CRC16-CCITT checksum.
@@ -217,20 +238,15 @@ def hk310_filter(port):
             b = checksum & 0xff
             state = STATE_WAIT_FOR_SYNC
             #print "Packet successfully filtered"
-            if count < 3:
+            if count < 2:
                 count += 1
             else:
                 count = 0;
                 if not disableLoop:
                     cur_value = cur_value + 1
-                    if cur_value == len(values):
+                    if cur_value >= len(values):
                         cur_value = 0
-                    
-                    rx_desired = values[cur_value] << 4
-                    if rx_desired >= 0x700:
-                        rx_desired += 2     # Above 0x700 add 2 for better stability! 
-                    rx = (2720 - rx_desired)
-                    new_ch3 = rx  * 16 / 17
+                    new_ch3 = nextValue(cur_value)
                 
         elif state == STATE_SKIP:
             skip = skip - 1
