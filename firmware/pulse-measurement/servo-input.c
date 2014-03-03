@@ -1,6 +1,6 @@
 #include <pic16f1825.h>
 
-#define NUM_AVERAGES 4
+#define NUM_AVERAGES 2
 
 unsigned char data;
 struct {
@@ -11,6 +11,11 @@ struct {
 static unsigned char wait;
 static unsigned int avg[NUM_AVERAGES];
 
+extern unsigned char tx_value;
+extern unsigned int tx_uint;
+extern void UART_send(void);
+extern void UART_send_uchar(void);
+
 
 /*****************************************************************************
  Init_input()
@@ -18,8 +23,6 @@ static unsigned int avg[NUM_AVERAGES];
  Called once during start-up of the firmware. 
  ****************************************************************************/
 void Init_input(void) {
-    unsigned char i;
-
     TMR1H = 0;
     TMR1L = 0;
     
@@ -27,12 +30,10 @@ void Init_input(void) {
     T1GCON = 0b11010000;   // Single shot gate mode
     T1CON = 0b00100001;    // Timer1 runs on Fosc/4; 1:4 pre-scaler; Timer enabled
 
-    for (i = 0; i < NUM_AVERAGES; i++) {
-        avg[i] = 0xa04;
-    }
-    
     flags.locked = 0;
     flags.dataChanged = 0;
+    
+    wait = NUM_AVERAGES;
 }
 
 
@@ -44,13 +45,8 @@ void Init_input(void) {
  state transition logic desired.
  ****************************************************************************/
 void Read_input(void) {
-    unsigned char i;
+    char i;
     unsigned int value;
-    unsigned int absDiff;
-
-    static char bigDiff = 0;
-    static unsigned int oldValue = 0xa04;
-    static unsigned char oldData = 0xff;
 
     flags.dataChanged = 0;
     
@@ -60,46 +56,13 @@ void Read_input(void) {
 
     T1GGO = 1;              // Start measuring a pulse
     while (T1GGO);         // Wait for the measurement to be finished
-
     
     value = (TMR1H << 8) + TMR1L;
+    
+    // Remove the offset we added in the transmitter to avoid tiny 
+    // pulse durations
+    value -= 0x20;
 
-
-    /* Glitch eliminator
-       Despite being a fully digital system, every now and then there are
-       glitches on the servo output. The sympthom of the glitch is that
-       it makes the pulse a bit longer.
-      
-       So we only use values that are within 4us of each-other. Everything
-       else is either a glitch, or a value change. If the difference is
-       really big we assume a value change, otherwise a glitch.
-       
-       The values have been determined through trial and error.
-      */      
-    absDiff = oldValue > value ? oldValue - value : value - oldValue;
-    if (absDiff > 4) {
-        if (bigDiff || absDiff > 7) {
-            oldValue = value;
-            bigDiff = 0;
-        }
-        else {
-            bigDiff = 1;
-        }
-        return;
-    }
-    oldValue = value;
-    
-    
-    /* Extract bits 11:4, which contain the payload. If we are locked and it
-       is a new data value, then send it further. 
-     */
-    data = value >> 4;
-    if (oldData != data  &&  flags.locked) {
-        flags.dataChanged = 1;
-    }
-    oldData = data;
-    
-    
     /* If we receive a value > 0x880 then it can only be the special value
        0xa04, which is used for syncing as well as calibrating the oscillator.  
        
@@ -120,7 +83,6 @@ void Read_input(void) {
         return;
     }
     
-    
     // Calculate the average of the last four values, to remove jitter
     value = 0;
     for (i = 0; i < NUM_AVERAGES; i++) {
@@ -128,34 +90,39 @@ void Read_input(void) {
     }
     value = value / NUM_AVERAGES;     
 
+    wait = NUM_AVERAGES;
+    i = OSCTUNE;
+    // Convert 6-bit signed into 6-bit unsigned
+    i = i ^ 0x20;
     
-    // FIXME: do a proper binary search algorithm
-    // FIXME: do proper OSCTUNE 6-bit signed math!
-    
-    if (value < 0xa01  ||  value > 0xa07) {
-        wait = 5;
-
-        if (value < 0xa01) {
-            if ((0xa04 - value) > 15) {
-                OSCTUNE = (OSCTUNE + 10) & 0x3f;
-                flags.locked = 0;
-            }
-            else {
-                OSCTUNE = (OSCTUNE + 1) & 0x3f;
-            }
-        }
-        else {
-            if ((value - 0xa04) > 15) {
-                OSCTUNE = (OSCTUNE - 10) & 0x3f;
-                flags.locked = 0;
-            }
-            else {
-                OSCTUNE = (OSCTUNE - 1) & 0x3f;
-            }
-        }
+    if (value < 0x9f1) {
+        flags.locked = 0;
+        i += 10;
+    }
+    else if (value > 0xa17) {
+        flags.locked = 0;
+        i -= 10;
+    }
+    else if (value < 0xa01) {
+        ++i;
+    }
+    else if (value > 0xa07) {
+        --i;
     }
     else {
+        wait = 0;
         flags.locked = 1;
     }    
+
+    if (i < 0) {
+        i = 0;
+    }
+    else if (i > 0x3f) {
+        i = 0x3f;
+    } 
+
+    // Convert 6-bit unsigned back into 6-bit signed
+    i = i ^ 0x20;
+    OSCTUNE = i;
 }
 

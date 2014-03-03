@@ -45,7 +45,7 @@ void Output_result(void) {
 
 #if SEND_RAW_TIMER_VALUE
     if (flags.locked) {
-        tx_uint = (TMR1H << 8) + TMR1L;;
+        tx_uint = (TMR1H << 8) + TMR1L;
         UART_send_uint();
     }
 #else
