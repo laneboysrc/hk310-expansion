@@ -44,7 +44,7 @@ def int2bin(n, count=32):
 oldData = 0
 valueCount = 0
 receivedValues = []
-expectedValues = [0x0f, 0x02, 0x00]
+expectedValues = [0x0f, 0x00, 0x02]
 startTime = time.time()
 
 def processValue(value):
@@ -111,13 +111,17 @@ def dump(port):
         try:        
             value = int(numString, 10)
         except ValueError:
-            value = 0
+            value = 0x20
+
+        value -= 0x20 # Remove to 0x20 offset we added in the transmitter
 
         jitter = value & 0xf
         print jitterString0x0f[jitter],
         print "0x%03x" % (value, ),
 
-        if abs(oldValue - value) <= 4:
+        if value == 0:
+            print "0######",   
+        elif abs(oldValue - value) <= 4:
             largeChange = False
             oldValue = value
             print "      ",
@@ -145,6 +149,7 @@ def dump(port):
                 print "       ",
                 processValue(value)
             oldValue = value
+
         else:
             largeChange = False
             if (oldValue < value):

@@ -19,8 +19,8 @@ import time
 values = [
     0xa0,
     0x0f,
-    0x02,
-    0x00
+    0x00,
+    0x02
 ]
 
 
@@ -54,8 +54,8 @@ def prepareValues():
 def nextValue(idx):
     global values
 
-        
     rx_desired = values[idx] << 4
+    rx_desired += 0x20;     # Add 0x20 to avoid tiny pulse durations
     if rx_desired >= 0x700:
         rx_desired += 2     # Above 0x700 add 2 for better stability! 
     rx = 2720 - 1 - rx_desired
