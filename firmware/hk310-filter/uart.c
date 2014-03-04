@@ -1,14 +1,13 @@
 #include <pic16f1825.h>
+#include <stdint.h>
 
 #define SPBRG_VALUE 208L     // 19200 @ 16 MHz
 
 
-void UART_send(void);
-void UART_send_uint(void);
-void UART_send_uchar(void);
-unsigned char UART_read_byte(void);
-unsigned char tx_value;
-unsigned int tx_uint;
+void UART_send(uint8_t);
+void UART_send_uint(uint16_t);
+void UART_send_uchar(uint8_t);
+uint8_t UART_read_byte(void);
 
 
 /*****************************************************************************
@@ -34,24 +33,26 @@ void Init_UART(void) {
 /*****************************************************************************
  Send tx_value out via the UART
  ****************************************************************************/
-void UART_send(void) {
-    // Wait for TSR register being empty, then send the character in tx_value
+void UART_send(uint8_t c) {
+    // Wait for TSR register being empty, then send the character
     while (!TRMT);
-    TXREG = tx_value;  
+    TXREG = c;  
 }
 
 
 /*****************************************************************************
  Send tx_uint as decimal number with leading zeros out via the UART
  ****************************************************************************/
-void UART_send_uint(void) {
+void UART_send_uint(uint16_t tx_uint) {
+    uint8_t tx_value;
+
     tx_value = 0;
     while (tx_uint >= 9999) {
         tx_uint -= 10000;
         ++tx_value;
     }
     tx_value += '0';
-    UART_send();
+    UART_send(tx_value);
 
     tx_value = 0;
     while (tx_uint >= 1000) {
@@ -59,7 +60,7 @@ void UART_send_uint(void) {
         ++tx_value;
     }
     tx_value += '0';
-    UART_send();
+    UART_send(tx_value);
     
     tx_value = 0;
     while (tx_uint >= 100) {
@@ -67,7 +68,7 @@ void UART_send_uint(void) {
         ++tx_value;
     }
     tx_value += '0';
-    UART_send();
+    UART_send(tx_value);
 
     tx_value = 0;
     while (tx_uint >= 10) {
@@ -75,13 +76,12 @@ void UART_send_uint(void) {
         ++tx_value;
     }
     tx_value += '0';
-    UART_send();
+    UART_send(tx_value);
 
     tx_value = tx_uint + '0';
-    UART_send();
+    UART_send(tx_value);
 
-    tx_value = '\n';
-    UART_send();
+    UART_send('\n');
 }
 
 
@@ -89,16 +89,16 @@ void UART_send_uint(void) {
  Send (unsigned char)tx_uint as decimal number with leading zeros out via 
  the UART
  ****************************************************************************/
-void UART_send_uchar(void) {
-    tx_uint = tx_uint & 0xff;
-    
+void UART_send_uchar(uint8_t tx_uint) {
+    uint8_t tx_value;
+
     tx_value = 0;
     while (tx_uint >= 100) {
         tx_uint -= 100;
         ++tx_value;
     }
     tx_value += '0';
-    UART_send();
+    UART_send(tx_value);
 
     tx_value = 0;
     while (tx_uint >= 10) {
@@ -106,13 +106,12 @@ void UART_send_uchar(void) {
         ++tx_value;
     }
     tx_value += '0';
-    UART_send();
+    UART_send(tx_value);
 
     tx_value = tx_uint + '0';
-    UART_send();
+    UART_send(tx_value);
 
-    tx_value = '\n';
-    UART_send();
+    UART_send('\n');
 }
 
 
@@ -136,7 +135,7 @@ void UART_send_uchar(void) {
 ; recommended that you ignore the error flags. Eventually an error will cause 
 ; the receiver to hang up if you don't clear the error condition.
 ;*****************************************************************************/
-unsigned char UART_read_byte(void)
+uint8_t UART_read_byte(void)
 {
     do {
         if (OERR) {

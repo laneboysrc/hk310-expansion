@@ -6,13 +6,8 @@ static __code uint16_t __at (_CONFIG2) configword2 = _WRT_OFF & _PLLEN_OFF & _ST
 
 
 extern void Init_UART(void);
-extern unsigned char UART_read_byte(void);
-extern void UART_send(void);
-extern unsigned char tx_value;
-
-unsigned char b;
-unsigned int new_crc16;
-
+extern uint8_t UART_read_byte(void);
+extern void UART_send(uint8_t);
 
 #define STATE_WAIT_FOR_SYNC 0
 #define STATE_SYNC2 1
@@ -58,23 +53,22 @@ static void Init_hardware(void) {
 
 /*****************************************************************************
  Add byte 'b' to the CRC16-CCITT checksum.
- 
- Checksum is stored in the global variable new_crc16.
  ****************************************************************************/
-void crc16_ccitt(void) 
+uint16_t crc16_ccitt(uint16_t crc16, uint8_t b) 
 {
-    unsigned char i;
+    uint8_t i;
     
-    new_crc16 = new_crc16 ^ b << 8;
+    crc16 = crc16 ^ b << 8;
 
     for (i = 0; i < 8 ; i++) {
-        if (new_crc16 & 0x8000) {
-            new_crc16 = new_crc16 << 1 ^ 0x1021;
+        if (crc16 & 0x8000) {
+            crc16 = crc16 << 1 ^ 0x1021;
         }
         else {
-            new_crc16 = new_crc16 << 1;
+            crc16 = crc16 << 1;
         }
     }
+    return crc16;
 }
     
     
@@ -90,13 +84,14 @@ void crc16_ccitt(void)
  
  Input: b: byte to process
  ****************************************************************************/
-unsigned char filter(void)
+uint8_t filter(uint8_t b)
 {
-    static unsigned char state = STATE_WAIT_FOR_SYNC;
-    static unsigned char skip;
-    static unsigned int new_checksum;
-    static char count = 0;
-    static int new_ch3;
+    static uint8_t state = STATE_WAIT_FOR_SYNC;
+    static uint8_t skip;
+    static uint16_t new_checksum;
+    static uint16_t new_crc16;
+    static uint8_t count = 0;
+    static uint16_t new_ch3;
 
     switch (state) {
         case STATE_WAIT_FOR_SYNC:
@@ -131,9 +126,8 @@ unsigned char filter(void)
                 state = STATE_SKIP;
                 skip = 11;
             }
-            new_crc16 = 0;
             new_checksum = (int)b;
-            crc16_ccitt();
+            new_crc16 = crc16_ccitt(0, b);
             break;
             
         case STATE_PAYLOAD4:
@@ -146,13 +140,13 @@ unsigned char filter(void)
                 skip = 10;
             }
             new_checksum += (int)b;
-            crc16_ccitt();
+            new_crc16 = crc16_ccitt(new_crc16, b);
             break;
             
         case STATE_PAYLOAD5:
             {
-                char t;
-                char ch3;
+                uint8_t t;
+                uint8_t ch3;
                 t = b >> 4; 
                 ch3 = b & 0x0f;
 
@@ -163,7 +157,7 @@ unsigned char filter(void)
             }
             state = STATE_PAYLOAD6;
             new_checksum += (int)b;
-            crc16_ccitt();
+            new_crc16 = crc16_ccitt(new_crc16, b);
             break;
             
         case STATE_PAYLOAD6:
@@ -171,7 +165,7 @@ unsigned char filter(void)
 
             state = STATE_PAYLOAD7;
             new_checksum += (int)b;
-            crc16_ccitt();
+            new_crc16 = crc16_ccitt(new_crc16, b);
             break;
             
         case STATE_PAYLOAD7:
@@ -179,7 +173,7 @@ unsigned char filter(void)
 
             state = STATE_PAYLOAD8;
             new_checksum += (int)b;
-            crc16_ccitt();
+            new_crc16 = crc16_ccitt(new_crc16, b);
             break;
             
         case STATE_PAYLOAD8:
@@ -188,7 +182,7 @@ unsigned char filter(void)
             
             state = STATE_CRC_H;
             new_checksum += (int)b;
-            crc16_ccitt();
+            new_crc16 = crc16_ccitt(new_crc16, b);
             break;
             
         case STATE_CRC_H:
@@ -244,9 +238,10 @@ void main(void) {
     Init_UART();
     
     while (1) {
+        uint8_t b;
         b = UART_read_byte();
-        tx_value = filter();
-        UART_send();
+        b = filter(b);
+        UART_send(b);
     }
 }
 
