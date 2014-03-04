@@ -226,7 +226,7 @@ def hk310_filter(port):
 
         elif state == STATE_CHECKSUM_H:
             received_checksum = b << 8
-            b = checksum >> 8
+            b = new_checksum >> 8
             state = STATE_CHECKSUM_L
 
         elif state == STATE_CHECKSUM_L:
@@ -235,7 +235,7 @@ def hk310_filter(port):
             if checksum != received_checksum:
                 print "WARNING: incoming checksum mismatch!"
 
-            b = checksum & 0xff
+            b = new_checksum & 0xff
             state = STATE_WAIT_FOR_SYNC
             #print "Packet successfully filtered"
             if count < 2:
