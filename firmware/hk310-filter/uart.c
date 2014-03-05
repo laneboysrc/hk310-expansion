@@ -1,13 +1,9 @@
 #include <pic16f1825.h>
 #include <stdint.h>
 
+#include "uart.h"
+
 #define SPBRG_VALUE 208L     // 19200 @ 16 MHz
-
-
-void UART_send(uint8_t);
-void UART_send_uint(uint16_t);
-void UART_send_uchar(uint8_t);
-uint8_t UART_read_byte(void);
 
 
 /*****************************************************************************
@@ -138,6 +134,7 @@ void UART_send_uchar(uint8_t tx_uint) {
 uint8_t UART_read_byte(void)
 {
     do {
+#if 0    
         if (OERR) {
             CREN = 0;
             WREG = RCREG;
@@ -149,6 +146,7 @@ uint8_t UART_read_byte(void)
         if (FERR) {
             WREG = RCREG;
         }
+#endif        
     } while (!RCIF);
     
     return RCREG;

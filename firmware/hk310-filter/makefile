@@ -1,5 +1,5 @@
 .PHONY: all
-all: hk310-filter
+all: hk310-filter hw-test
 
 
 #############################################################################
@@ -7,6 +7,13 @@ all: hk310-filter
 hk310-filter: hk310-filter.hex
 
 hk310-filter.hex: hk310-filter.o uart.o
+	sdcc --opt-code-size --use-non-free -mpic14 -p16f1825 -o $@ $^
+
+#############################################################################
+.PHONY: hw-test
+hw-test: hw-test.hex
+
+hw-test.hex: hw-test.o uart.o
 	sdcc --opt-code-size --use-non-free -mpic14 -p16f1825 -o $@ $^
 
 

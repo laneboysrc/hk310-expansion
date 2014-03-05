@@ -1,13 +1,12 @@
 #include <pic16f1825.h>
 #include <stdint.h>
 
+#include "uart.h"
+
+
 static __code uint16_t __at (_CONFIG1) configword1 = _FOSC_INTOSC & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _CP_OFF & _CPD_OFF & _BOREN_OFF & _CLKOUTEN_OFF & _IESO_OFF & _FCMEN_OFF;
 static __code uint16_t __at (_CONFIG2) configword2 = _WRT_OFF & _PLLEN_OFF & _STVREN_OFF & _LVP_OFF; 
 
-
-extern void Init_UART(void);
-extern uint8_t UART_read_byte(void);
-extern void UART_send(uint8_t);
 
 #define STATE_WAIT_FOR_SYNC 0
 #define STATE_SYNC2 1
