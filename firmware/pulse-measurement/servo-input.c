@@ -1,6 +1,6 @@
 #include <pic16f1825.h>
 
-#define NUM_AVERAGES 2
+#define NUM_AVERAGES 4
 
 unsigned char data;
 struct {
