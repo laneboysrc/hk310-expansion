@@ -82,6 +82,24 @@ void UART_send_uint(uint16_t tx_uint) {
 
 
 /*****************************************************************************
+ Send tx_uint as binary number with leading zeros out via the UART
+ ****************************************************************************/
+void UART_send_binary_uint(uint16_t tx_uint) {
+    char i;
+    uint8_t c;
+    
+    for (i = 15; i >= 0; i--) {
+        c = '0';
+        if (tx_uint & (1 << i)) {
+            c = '1';
+        }
+        UART_send(c);
+    }
+    UART_send('\n');
+}
+
+
+/*****************************************************************************
  Send (unsigned char)tx_uint as decimal number with leading zeros out via 
  the UART
  ****************************************************************************/
@@ -134,7 +152,6 @@ void UART_send_uchar(uint8_t tx_uint) {
 uint8_t UART_read_byte(void)
 {
     do {
-#if 0    
         if (OERR) {
             CREN = 0;
             WREG = RCREG;
@@ -146,8 +163,19 @@ uint8_t UART_read_byte(void)
         if (FERR) {
             WREG = RCREG;
         }
-#endif        
     } while (!RCIF);
     
     return RCREG;
 }
+
+
+/******************************************************************************
+; UART_receive_byte_pending
+;
+; Test whether there is a byte in the UART receive buffer.
+;*****************************************************************************/
+uint8_t UART_receive_byte_pending(void)
+{
+    return RCIF;
+}
+
