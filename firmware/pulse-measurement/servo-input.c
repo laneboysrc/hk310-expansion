@@ -59,9 +59,6 @@ void Read_input(void) {
     
     value = (TMR1H << 8) + TMR1L;
     
-    // Remove the offset we added in the transmitter to avoid tiny 
-    // pulse durations
-    value -= 0x20;
 
     /* If we receive a value > 0x880 then it can only be the special value
        0xa04, which is used for syncing as well as calibrating the oscillator.  
@@ -70,6 +67,9 @@ void Read_input(void) {
        of how mis-tuned our local oscillator is.
      */
     if (value <= 0x880) {
+        // Remove the offset we added in the transmitter to avoid tiny 
+        // pulse durations
+        //value -= 0x20;
         return;
     }
         
@@ -95,18 +95,18 @@ void Read_input(void) {
     // Convert 6-bit signed into 6-bit unsigned
     i = i ^ 0x20;
     
-    if (value < 0x9f1) {
+    if (value < 0xa31) {
         flags.locked = 0;
         i += 10;
     }
-    else if (value > 0xa17) {
+    else if (value > 0xa57) {
         flags.locked = 0;
         i -= 10;
     }
-    else if (value < 0xa01) {
+    else if (value < 0xa3e) {
         ++i;
     }
-    else if (value > 0xa07) {
+    else if (value > 0xa42) {
         --i;
     }
     else {

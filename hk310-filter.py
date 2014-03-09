@@ -17,10 +17,10 @@ import sys
 import time
 
 values = [
-    0xa0,
-    0x0f,
-    0x00,
-    0x02
+    0,      # 1 bit
+    0x3f,   # 6 bits
+    0x1f,   # 5 bits
+    0x1f    # 5 bits
 ]
 
 
@@ -34,34 +34,48 @@ cur_value = 0
 def prepareValues():
     # Sanitize values    
     for i, _ in enumerate(values):
-        if i == 1:
-            values[i] = values[i] & 0x7f
-        elif i>= 2: 
+        if i == 0:
+            values[i] = values[i] & 0x01
+        elif i == 1:
             values[i] = values[i] & 0x3f
+        elif i>= 2: 
+            values[i] = values[i] & 0x1f
             new = values[i]
             old = values[i - 1]
             # Maximize the difference between adjacent values
-            # This results in a minimum difference of 0x20
-            if abs(old - new) < abs(old - (new | 0x40)):
-                new = new | 0x40
+            # This results in a minimum difference of 0x200
+            if abs(old - new) < abs(old - (new | (0x400 >> 5))):
+                new = new | (0x400 >> 5)
             values[i] = new
 
     for i, _ in enumerate(values):
         print nextValue(i)
 
 
+c = 0
 
 def nextValue(idx):
     global values
+    global c
 
-    rx_desired = values[idx] << 4
-    rx_desired += 0x20;     # Add 0x20 to avoid tiny pulse durations
-    if rx_desired >= 0x700:
-        rx_desired += 2     # Above 0x700 add 2 for better stability! 
+    if idx == 0:
+        rx_desired = 0xa40
+    else:
+        rx_desired = values[idx] << 5
+        rx_desired = c << 5
+        c += 1
+        if c > 0x3f:
+            c = 0
+        #rx_desired += 8         # Add 0x08 as it is the desired value, so that we have -8 /+ 24 room for jitter
+        rx_desired += 0x20      # Add 0x20 to avoid tiny pulse durations
+        #if rx_desired >= 0x700:
+        rx_desired += (rx_desired >> 8)    # 
     rx = 2720 - 1 - rx_desired
     return rx  * 16 / 17
 
+
 prepareValues()
+
 
 def crc16_ccitt(crc, byte):
     """ Add a byte to the CRC16-CCITT checksum.
