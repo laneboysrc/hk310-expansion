@@ -24,6 +24,9 @@ values = [
 ]
 
 
+SYNC_VALUE_NOMINAL = 0xa40
+
+
 new_ch3 = values[0]
 disableLoop = 0
 
@@ -59,19 +62,17 @@ def nextValue(idx):
     global c
 
     if idx == 0:
-        rx_desired = 0xa40
+        rx_desired = SYNC_VALUE_NOMINAL
     else:
         rx_desired = values[idx] << 5
         rx_desired = c << 5
         c += 1
         if c > 0x3f:
             c = 0
-        #rx_desired += 8         # Add 0x08 as it is the desired value, so that we have -8 /+ 24 room for jitter
         rx_desired += 0x20      # Add 0x20 to avoid tiny pulse durations
-        #if rx_desired >= 0x700:
-        rx_desired += (rx_desired >> 8)    # 
+        rx_desired += (rx_desired >> 8)     
     rx = 2720 - 1 - rx_desired
-    return rx  * 16 / 17
+    return rx * 16 / 17
 
 
 prepareValues()
