@@ -2,19 +2,22 @@
 all: hk310-filter hw-test
 
 
+CFLAGS:=--opt-code-size --use-non-free -mpic14 -p16f1825 
+LDFLAGS:=--use-non-free -mpic14 -p16f1825 
+
 #############################################################################
 .PHONY: hk310-filter
 hk310-filter: hk310-filter.hex
 
 hk310-filter.hex: hk310-filter.o uart.o
-	sdcc --opt-code-size --use-non-free -mpic14 -p16f1825 -o $@ $^
+	sdcc $(LDFLAGS) -o $@ $^
 
 #############################################################################
 .PHONY: hw-test
 hw-test: hw-test.hex
 
 hw-test.hex: hw-test.o keyboard-matrix.o uart.o
-	sdcc --opt-code-size --use-non-free -mpic14 -p16f1825 -o $@ $^
+	sdcc $(LDFLAGS) -o $@ $^
 
 
 
@@ -26,7 +29,7 @@ uart.c: uart.h
 
 #############################################################################
 .c.o:
-	sdcc --opt-code-size --use-non-free -mpic14 -p16f1825 -c $<
+	sdcc $(CFLAGS) -c $<
 
 
 clean :

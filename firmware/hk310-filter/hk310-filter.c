@@ -8,6 +8,8 @@ static __code uint16_t __at (_CONFIG1) configword1 = _FOSC_INTOSC & _WDTE_OFF & 
 static __code uint16_t __at (_CONFIG2) configword2 = _WRT_OFF & _PLLEN_OFF & _STVREN_OFF & _LVP_OFF; 
 
 
+#define SYNC_VALUE_NOMINAL 0xa40
+
 #define STATE_WAIT_FOR_SYNC 0
 #define STATE_SYNC2 1
 #define STATE_SYNC3 2
@@ -69,6 +71,34 @@ uint16_t crc16_ccitt(uint16_t crc16, uint8_t b)
     }
     return crc16;
 }
+
+
+/*****************************************************************************
+ Returns the next 12-bit value to transmit over CH3
+ ****************************************************************************/
+uint16_t nextValue() 
+{
+    static uint8_t index = 0;
+
+    ++index;
+    switch (index) {
+        case 0:
+            return SYNC_VALUE_NOMINAL;
+            
+        case 1:
+            return 0x020;
+
+        case 2:
+            return 0x420;
+
+        case 3:
+            index = 0;
+            return 0x810;
+    }
+    
+    index = 0;
+    return SYNC_VALUE_NOMINAL;
+}
     
     
 /*****************************************************************************
@@ -90,7 +120,7 @@ uint8_t filter(uint8_t b)
     static uint16_t new_checksum;
     static uint16_t new_crc16;
     static uint8_t count = 0;
-    static uint16_t new_ch3;
+    static uint16_t new_ch3 = SYNC_VALUE_NOMINAL;
 
     switch (state) {
         case STATE_WAIT_FOR_SYNC:
@@ -215,11 +245,15 @@ uint8_t filter(uint8_t b)
             ++count;
             if (count >= 2) {
                 count = 0;
-                //new_ch3 = nextValue(cur_value)
+                new_ch3 = nextValue();
             }
             break;
 
         case STATE_SKIP:
+            --skip;
+            if (skip == 0) {
+                state = STATE_WAIT_FOR_SYNC;
+            }
             break;
     }
     
