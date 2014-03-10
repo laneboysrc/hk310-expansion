@@ -97,6 +97,7 @@ def processValue(value):
     global oldData
     global receivedValues
     global startTime
+    global minTime, maxTime
 
     # Remove the offset we added in the transmitter to ensure the minimum
     # pulse does not go down to zero.
@@ -107,7 +108,7 @@ def processValue(value):
     # so that our check whether the value has changed does not trigger 
     # wrongly when jitter moves between e.g. 0xa40 and 0xa3f
     if value >= SYNC_VALUE_LIMIT:
-        value = SYNC_VALUE
+        value = SYNC_VALUE_NOMINAL
     
     # The actual usable data are only the upper 7 bits (bits 11..5) because of
     # the jitter and glitches introduced by the receiver firmware    
@@ -118,10 +119,10 @@ def processValue(value):
     if oldData != data:
         if value < SYNC_VALUE_LIMIT:
             receivedValues.append(data)
-            valueCount = valueCount + 1
         else:        
             now = time.time()
-            print "  %3dms" % (int((now - startTime) * 1000), ),
+            diff = int((now - startTime) * 1000)
+            print "  %3dms" % (diff, ),
             startTime = now
             
             if len(receivedValues) != VALUE_COUNT:
@@ -135,11 +136,11 @@ def processValue(value):
                 for d in receivedValues:           
                     print "0x%02x" % d,
                 
-                print "   "    
+                print "   ",    
 
                 numBits = 6
                 for d in receivedValues:           
-                    print int2bin(d, numBits), " "
+                    print int2bin(d, numBits), " ",
                     numBits = 5
                     
             receivedValues = []
