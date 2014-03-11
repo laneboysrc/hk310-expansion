@@ -61,17 +61,17 @@ Analyzing the transmission path
 As outlined in hk310-info, the pulse that we read from the receiver is jittery
 and has an occasional glitch. These errors are certainly caused by the 
 receiver generating the pulse as we can assume that the digital path
-over the air is protected by error detection and correction codes.
+over the air is protected by an error detection scheme.
 
 In the long run it may be worth investigating whether it is possible to alter
 the receiver (firmware) to generate more precise pulses, or even output
-raw data (for example via SPI). For now we have to live with the unreliable 
-pulses.
+raw data (for example via SPI, or a UART). For now we have to live with 
+the unreliable pulses.
 
 Sending stick data value in the range of 0x000 to 0x9ff causes unique pulse
-durations in the output of the receiver. Since the lower four bits are 
-unreliable we are able to extract slightly more than 7 bits (0x00. to 0x9f., 
-with 0x00. to 0x7f. being exactly 7 bits).
+durations in the output of the receiver. Since the lower five bits are 
+unreliable we are able to extract slightly more than 6 bits (0x00 to 0x9e, 
+with 0x00 to 0x7e being exactly 7 bits).
 
 Another issue of the transmission path is that the various modules involved
 in sending and receiving data run asynchronously at different frequencies:
@@ -82,7 +82,7 @@ in sending and receiving data run asynchronously at different frequencies:
 
 Since transmitter and receiver run asynchronously we need to design our
 protocol to include a form of synchronization if we want to transmit more than
-7 bits. The jitter and glitches will also require filtering, which will delay 
+6 bits. The jitter and glitches will also require filtering, which will delay 
 the output.
 
 
@@ -91,13 +91,13 @@ Other issues
 ===============================================================================
 
 The PIC microcontroller we intend to use as decoder has a built-in RC oscillator
-that is factory tuned to +/-1%. While this is quite low, it is still not good
-enough for our application (1% of 12 bits in our data channel is 40 values, 
-which is way more than 4 bits we want to achieve).
+that is factory tuned to +/-1%. While this is quite precise, it is still not good
+enough for our application (1% of 12 bits in our data channel causes an error of 
+40, more than 5 bits!).
 
 There are different solutions that can be applied to resolve this issue:
 
-- Use the crystal oscillator present in the receiver
+- Tap into the crystal oscillator present in the receiver
 - Use a separate crystal oscillator
 - Calibrate the RC oscillator
 
@@ -109,19 +109,19 @@ A separate crystal oscillator would work fine as well, but would add cost and
 make bread-boarding difficult too.
 
 Calibrating the RC oscillator was the method finally chosen. Since we wanted
-to transmit more than 7 bits anyway, we needed to implement a sync mechanism.
-The chosen sync value is a pulse duration of 0xa04 (2564us). This value is 
-above the 7 bit range, so payload will never have such value. It is also a
-very large pulse, making it useful as reference since a constant 4-bit (16us) 
-jitter is a small percentage of the total 2564us pulse duration.
+to transmit more than 6 bits anyway, we needed to implement a sync mechanism.
+The chosen sync value is a pulse duration of 0xa40 (2624us). This value is 
+above the data range of 6 bits payload and 5 bit reserved for glitches and 
+jitter, so payload will never have such value. It is also a very large pulse, 
+making it useful as reference.
 
 Since the oscillator is factory calibtrated to 1%, the inital pulse measurement
-should be 0x9ea .. 0xa1d. Even worst case a valid payload would be only 0x813,
+should be 0xa25 .. 0xa5a. Even worst case a valid payload would be only 0x813,
 so the firmware can reliably detect the sync value. The firmware will then
-adjust the OSCTUNE register in steps until the sync value is 0xa04 (+/-3).
+adjust the OSCTUNE register in steps until the sync value is 0xa40 (+/-3).
 The firmware can constantly monitor and tweak OSCTUNE so that potential drifts
 at run-time are adjusted for.
-This method also has the advantage that any inaccuracy in the NRF24LE1 clock
+This method also has the advantage that any inaccuracy of the NRF24LE1 clock
 is also compensated.
 
 
@@ -131,25 +131,25 @@ Protocol
 
 The data sent over the CH3 data stream is as follows:
 
-    SYNC PAYLOAD1_7 PAYLOAD2_6 ... PAYLOADn_6 SYNC PAYLOAD1_7 ...
+    SYNC PAYLOAD1_6 PAYLOAD2_5 ... PAYLOADn_5 SYNC PAYLOAD1_6 ...
 
 The protocol is a repeating series of values. The range of the values is
-0x00..0x7f (7 bits), plus the special value 0xa0 used as SYNC value.
+0x00..0x3f (6 bits), plus the special value 0xa40 used as SYNC value.
 
-On the transmitter side these values correspond to the number sent to the NRF 
-module as follows::
+On the transmitter side the payload values correspond to the number sent to 
+the NRF module as follows::
 
-    v = value << 4
-    if v >= 0x700:
-        v += 2
-    tx_value = (2720 - v) * 16 / 17
+    v = value << 5
+    v = v + 0x20
+    v = v + (v >> 8)
+    tx_value = (2720 - v - 1) * 16 / 17
 
-Note that if the (expanded) value is larger than 0x700 we add 2, as to shift
-the offset up slightly so that the jitter stays above 0x00 and does not go
-negative. This was determined empirically. 
+Note that we add an offset of 0x20 as to prevent that we generate extremely
+short pulses on the CH3 output of the receiver.
 
-On the receiver side it is simply a matter of shifting the pulse duration,
-measured with 1 microsecond resolution, to the right by 4. 
+On the receiver side it is simply a matter of subtracting the offset 0x20 and 
+shifting the pulse duration, measured with 1 microsecond resolution, to the 
+right by 5. 
 
 Since there is no synchronization between transmitter and receiver, the
 receiver has to determine which pulse belongs to which position in the 
@@ -158,11 +158,11 @@ protocol. This is done by ensuring that no **consecutive** values are the same.
 - Since SYNC is a number outside of the payload range, this condition is
   guaranteed in all cases.
 
-- PAYLOAD1_7 has bits 0..6 dedicated to the payload, hence can have
-  any value between 0x00 and 0x7f. 
+- PAYLOAD1_6 has bits 0..5 dedicated to the payload, hence can have
+  any value between 0x00 and 0x3f. 
 
-- PAYLOAD2_6 .. PAYLOADn_6 have bits 0..5 dedicated to the  
-  payload. Bit 6 is chosen as that the difference with the previous 7-bit 
+- PAYLOAD2_5 .. PAYLOADn_5 have bits 0..4 dedicated to the  
+  payload. Bit 5 is chosen as that the difference with the previous 6-bit 
   value is as large as possible. With this algorithm we have a difference of
   at least 512us (0x200) between neighboring values, which helps with 
   detecting and recovering from glitches.
@@ -171,13 +171,13 @@ Because we have to deal with glitches and asynchronicity, the transmitter is
 repeating every value 2 times. This means the response time of the 
 received values is as follows:
 
-SYNC + 1 payload (7 bits)
+SYNC + 1 payload (6 bits)
         ~79-96ms
 
-SYNC + 2 payload (13 bits)
+SYNC + 2 payload (11 bits)
         ~95-144ms
 
-SYNC + 3 payload (19 bits)
+SYNC + 3 payload (16 bits)
         ~159-193ms
 
 (approx 60ms per value)
@@ -191,7 +191,7 @@ The payload can transmit any kind of data, so it is possible to use a number
 of bits in the payload and use them to generate a servo pulse. 
 
 One has to consider resolution and response time. As described in the previous
-section, the response time is as low as 200ms for a 19-bit total payload. 
+section, the response time is as low as 200ms for a 16-bit total payload. 
 This means that the servo will follow the input with a very significant delay,
 and large jumps -- certainly not useful for steering or throttle, but possibly
 suitable for auxillary functions like the nozzle on a firetruck.
@@ -217,5 +217,6 @@ steering servo, but only when a switch is in a certain position. This could
 be useful for 4-wheel steered vehicles, where we have a switch that lets us
 choose 4-wheel steering, 2-wheel steering, and crab mode.
 
-In a similar manner a dig can be implemented for rock crawlers with two motors.
+In a similar manner a dig can be implemented for rock crawlers with two motors
+and speed controllers.
 

@@ -11,10 +11,12 @@ transmitter. Most findings also apply to the **Turnigy X-3S** transmitter.
 
 The HobbyKing HK300 uses the same hardware RF module as the HK310 and X-3S, but
 the module contains a different firmware and uses the pins of the module
-in an entirely different way.
+in an entirely different way. Therefore this document does not apply to the 
+HK300.
 
 The HK310 comprises of a microcontroller (MCU) of unknown origin, and a RF module
-using Nordic Semiconductor NRF24LE1 (refered to as NRF module in this document). 
+using Nordic Semiconductor NRF24LE1 (refered to as "NRF module" in this 
+document). 
 
 The MCU reads the sticks and switches, drives the display; it basically handles
 all user-facing functions of the transmitter.
@@ -92,8 +94,7 @@ Serial port protocol
 The serial port runs at **19200,N,8,1**.
 
 Data is only sent **to** the NRF module. The Tx line of the NRF module
-is connected to the MCU in the transmitter, but there is no data being sent at 
-all.
+is connected to the MCU in the transmitter, but there is no data being sent.
 
 Data is sent to the NRF module in **packets of 15 bytes**. The first three bytes
 indicate the packet type. There are two packet types in use:
@@ -146,7 +147,7 @@ bytes 9 (MSB) and 10 (LSB).
 
 
 Unfortunately neither checksum are verified at the receiving end. Sending
-bogus values still makes the system work fine :(
+bogus values has no impact on the operation of the system :(
 
 
 
@@ -171,7 +172,7 @@ And to calculate a channel value for a desired pulse length::
 
 The generated pulses are unfortunately not very precise. There is a jitter
 of about +/-2us. Furthermore, every now and then there are glitches making
-the pulses longer. In reality it means that the lower 4 bits are not usable
+the pulses longer. In reality it means that the lower 5 bits are not usable
 for reliable transmission of binary data. 
 
 
@@ -187,9 +188,8 @@ for reliable transmission of binary data.
     ST  right   ff 55 aa aa a5 42 dc 7a 8a 2a 48 22 7c 03 e3
     --------------------------------------------------------
                              s t3 ss tt 33 cc cc XX XX kk kk
-                         yy yy yy yy yy yy                   
-                                       checksum bytes: CRC16 = cc cc
-                                       checksum bytes: sum = kk kk
+                         yy yy yy yy yy yy                   checksum bytes: CRC16 = cc cc
+                         xx xx xx xx xx xx xx xx             checksum bytes: sum = kk kk
 
 
 Failsafe
@@ -272,7 +272,9 @@ receiver.
 
 Note that only the first 6 bytes contain random values, the rest are padding 
 (value increments from the last random byte value onwards. Note sure if only the 
-first 6 bytes are transmitted over the air, or all 25 bytes.
+first 6 bytes are transmitted over the air, or all 25 bytes. The NRF chip 
+supports 5 bytes of address, so it could well be that only the first 5 bytes
+are significant and the rest is just padding.
 The data found in the receiver EEPROM matches all 25 bytes, but that could
 just be done as a kind of checksum.
 
