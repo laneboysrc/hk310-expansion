@@ -18,9 +18,9 @@ import time
 
 values = [
     0,      # 1 bit
-    0x3f,   # 6 bits
+    0x05,   # 6 bits
     0x1f,   # 5 bits
-    0x1f    # 5 bits
+    0x00    # 5 bits
 ]
 
 
@@ -51,8 +51,8 @@ def prepareValues():
                 new = new | (0x400 >> 5)
             values[i] = new
 
-    for i, _ in enumerate(values):
-        print "%03x" % nextValue(i)
+#    for i, _ in enumerate(values):
+#        print "%03x" % nextValue(i)
 
 
 c = 0
@@ -63,6 +63,12 @@ def nextValue(idx):
 
     if idx == 0:
         rx_desired = SYNC_VALUE_NOMINAL
+
+        values[1] = c & 0x3f
+        values[2] = (c >> 6) & 0x1f
+        values[3] = (c >> 11) & 0x1f
+        c = c + 1
+        prepareValues()
     else:
         rx_desired = values[idx] << 5
         #rx_desired = c << 5
