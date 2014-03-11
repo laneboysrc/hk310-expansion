@@ -52,7 +52,7 @@ def prepareValues():
             values[i] = new
 
     for i, _ in enumerate(values):
-        print nextValue(i)
+        print "%03x" % nextValue(i)
 
 
 c = 0
@@ -65,10 +65,10 @@ def nextValue(idx):
         rx_desired = SYNC_VALUE_NOMINAL
     else:
         rx_desired = values[idx] << 5
-        rx_desired = c << 5
-        c += 1
-        if c > 0x3f:
-            c = 0
+        #rx_desired = c << 5
+        #c += 1
+        #if c > 0x3f:
+        #    c = 0
         rx_desired += 0x20      # Add 0x20 to avoid tiny pulse durations
         rx_desired += (rx_desired >> 8)     
     rx = 2720 - 1 - rx_desired
