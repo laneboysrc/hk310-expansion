@@ -42,6 +42,17 @@ extern void TLC5940_send(void);
 extern uint8_t light_data[16];
 
 
+extern struct {
+    unsigned locked : 1;
+    unsigned dataChanged : 1;
+} flags;
+#define LED_LOCKED 10
+#define LED_DATA_CHANGED 0
+#define LED_BLINK 12
+#define LED_SYNC 15
+
+#define LED_VALUE 0x0f  // Medium brightness
+
 /*****************************************************************************
  Init_hardware()
  
@@ -74,30 +85,53 @@ static void Init_hardware(void) {
     INTCON = 0;
 }
 
+
+/*****************************************************************************
+ ****************************************************************************/
+void Output_LEDs(void) 
+{
+    uint8_t i;
+    static uint8_t blink;
+    
+    for (i = 0; i < 16; i++) {
+        light_data[i] = 0x00;
+    }
+    
+    if (flags.dataChanged) {
+        light_data[LED_DATA_CHANGED] = LED_VALUE;
+    }
+
+    if (flags.locked) {
+        light_data[LED_LOCKED] = LED_VALUE;
+    }
+
+    if (((TMR1H << 8) | TMR1L) > 0x880) {
+        light_data[LED_SYNC] = LED_VALUE;
+    }
+
+    if (++blink & 0x20) {
+        light_data[LED_BLINK] = LED_VALUE;
+    }
+    
+    TLC5940_send();    
+}
+
+
 /*****************************************************************************
  main()
  
  No introduction needed ... 
  ****************************************************************************/
 void main(void) {
-    int i;
-    
     Init_hardware();
     Init_output();
     Init_input();
     Init_TLC5940();
-
-    for (i = 0; i < 16; i++) {
-        light_data[i] = 0x00;
-    }
     
-    light_data[2] = 0x3f;
-    light_data[10] = 0x0f;
-    TLC5940_send();    
-
     while (1) {
         Read_input();
         Output_result();
+        Output_LEDs();
     }
 }
 
