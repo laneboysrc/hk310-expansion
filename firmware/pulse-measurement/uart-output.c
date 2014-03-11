@@ -41,19 +41,10 @@ void Init_output(void) {
  Outputs the timer 1 value as decimal number, including leading zeros
  ****************************************************************************/
 void Output_result(void) {
-#define SEND_RAW_TIMER_VALUE 1
-
-#if SEND_RAW_TIMER_VALUE
     if (flags.locked) {
         tx_uint = (TMR1H << 8) + TMR1L;
         UART_send_uint();
     }
-#else
-    if (!flags.dataChanged) {
-        tx_uint = data;
-        UART_send_uchar();
-    }
-#endif
 }
 
 

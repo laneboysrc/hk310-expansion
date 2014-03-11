@@ -41,14 +41,18 @@ extern void Init_TLC5940(void);
 extern void TLC5940_send(void);
 extern uint8_t light_data[16];
 
+extern void Process_value(void);
 
 extern struct {
     unsigned locked : 1;
     unsigned dataChanged : 1;
 } flags;
-#define LED_LOCKED 10
-#define LED_DATA_CHANGED 0
-#define LED_BLINK 12
+
+extern uint8_t receivedValues[3];
+
+#define LED_LOCKED 12
+#define LED_DATA_CHANGED 13
+#define LED_BLINK 14
 #define LED_SYNC 15
 
 #define LED_VALUE 0x0f  // Medium brightness
@@ -91,10 +95,36 @@ static void Init_hardware(void) {
 void Output_LEDs(void) 
 {
     uint8_t i;
+    uint8_t mask;
     static uint8_t blink;
+    static uint8_t cachedValues[3];
+    
+    if (flags.dataChanged) {
+        for (i = 0; i < 3; i++) {
+            cachedValues[i] = receivedValues[i];
+        }
+    }
     
     for (i = 0; i < 16; i++) {
         light_data[i] = 0x00;
+    }
+
+    mask = 1;
+    for (i = 0; i < 6; i++) {
+        light_data[i] = cachedValues[0] & mask ? LED_VALUE : 0;
+        mask = mask << 1;
+    }
+
+    mask = 1;
+    for (i = 6; i < 11; i++) {
+        light_data[i] = cachedValues[1] & mask ? LED_VALUE : 0;
+        mask = mask << 1;
+    }
+
+    mask = 1;
+    for (i = 11; i < 12; i++) { // we only have 12 LEDs available...
+        light_data[i] = cachedValues[2] & mask ? LED_VALUE : 0;
+        mask = mask << 1;
     }
     
     if (flags.dataChanged) {
@@ -130,6 +160,7 @@ void main(void) {
     
     while (1) {
         Read_input();
+        Process_value();
         Output_result();
         Output_LEDs();
     }
