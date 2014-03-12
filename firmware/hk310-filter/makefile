@@ -2,14 +2,15 @@
 all: hk310-filter hw-test
 
 
-CFLAGS:=--opt-code-size --use-non-free -mpic14 -p16f1825 
-LDFLAGS:=--use-non-free -mpic14 -p16f1825 
+#CFLAGS:=--opt-code-size --use-non-free -mpic14 -p16f1825 
+CFLAGS:=--no-peep --use-non-free -mpic14 -p16f1825 
+LDFLAGS:=--no-peep --use-non-free -mpic14 -p16f1825 
 
 #############################################################################
 .PHONY: hk310-filter
 hk310-filter: hk310-filter.hex
 
-hk310-filter.hex: hk310-filter.o uart.o
+hk310-filter.hex: hk310-filter.o uart.o keyboard-matrix.o 
 	sdcc $(LDFLAGS) -o $@ $^
 
 #############################################################################
