@@ -74,13 +74,23 @@ uint16_t crc16_ccitt(uint16_t crc16, uint8_t b)
 }
 
 
+/*****************************************************************************
+ We use bit 5 of the 2nd and 3rd payload byte to maximize the difference
+ between adjacent payload values. This is also needed because two neighboring
+ payload values could be the same value, which means the receiving and
+ can't distinguish between them. 
+ 
+ We calculate the difference between the previous value and the current on,
+ and compare it with the difference between the previous value and the 
+ current one with bit 5 set. Whichever gives a larger difference is used.
+ ****************************************************************************/
 uint8_t maximizeDifference(uint8_t old, uint8_t new)
 {
     uint8_t diff1;   
     uint8_t diff2;   
     uint8_t new2;   
     
-    new2 = new | (0x400 >> 5);
+    new2 = new | (1 << 5);
     
     diff1 = (old >= new) ? old - new : new - old;
     diff2 = (old >= new2) ? old - new2 : new2 - old;
@@ -92,6 +102,7 @@ uint8_t maximizeDifference(uint8_t old, uint8_t new)
     
 }
 
+
 static uint16_t c = 0;
 /*****************************************************************************
  Returns the next 12-bit value to transmit over CH3
@@ -102,14 +113,26 @@ uint16_t nextValue()
     uint16_t rx = SYNC_VALUE_NOMINAL;
     uint8_t values[4];
 
-    payload = c;
-    payload = Scan_keyboard();
+    //payload = c;
 
     values[0] = 0;
     values[1] = (payload >> 0) & 0x3f;
     values[2] = maximizeDifference(values[1], (payload >> 6) & 0x1f);
     values[3] = maximizeDifference(values[2], (payload >> 11) & 0x1f);
     
+    // Clear the bits that we have sent accross
+    if (index == 1) {
+        payload &= 0xffc0;
+    }
+    if (index == 2) {
+        payload &= 0xf83f;
+    }
+    if (index == 3) {
+        payload &= 0x07ff;
+    }
+
+
+
     if (index == 0) {
         rx = SYNC_VALUE_NOMINAL;
         ++c;
@@ -277,6 +300,12 @@ uint8_t filter(uint8_t b)
                 count = 0;
                 new_ch3 = nextValue();
             }
+
+            // Scan the keyboard. Only set bits here, they are cleared whenever
+            // we've sent the respective data to the receiver. This way
+            // we can deal with short button pushes even though the reaction
+            // time is ~175ms.    
+            payload |= Scan_keyboard();
             break;
 
         case STATE_SKIP:
