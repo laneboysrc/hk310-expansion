@@ -1,4 +1,11 @@
-#include <pic16f1825.h>
+#if defined PIC16F1825
+    #include <pic16f1825.h>
+#elif defined PIC12F1840
+    #include <pic12f1840.h>
+#else
+    #error MCU must be defined to one of the supported device names
+#endif
+
 #include <stdint.h>
 
 #include "uart.h"
