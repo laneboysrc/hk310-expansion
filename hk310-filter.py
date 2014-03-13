@@ -34,12 +34,17 @@ cur_value = 0
 
 
 
-def prepareValues():
-    # Sanitize values    
-    for i, _ in enumerate(values):
-        if i == 0:
-            values[i] = values[i] & 0x01
-        elif i == 1:
+def prepareValues(data):
+    values[0] = 0                       # Not used yet, preparation for 
+                                        # transmitting an extra bit via SYNC
+    values[1] = (data >> 10) & 0x3f
+    values[2] = (data >> 5) & 0x1f
+    values[3] = (data >> 0) & 0x1f
+
+    # Pre-process the payload data, ensuring that no two consecutive payload
+    # values have the same value.
+    for i in range(len(values)):
+        if i == 1:
             values[i] = values[i] & 0x3f
         elif i>= 2: 
             values[i] = values[i] & 0x1f
@@ -47,41 +52,28 @@ def prepareValues():
             old = values[i - 1]
             # Maximize the difference between adjacent values
             # This results in a minimum difference of 0x200
-            if abs(old - new) < abs(old - (new | (0x400 >> 5))):
-                new = new | (0x400 >> 5)
+            if abs(old - new) < abs(old - (new | (1 << 5))):
+                new = new | (1 << 5)
             values[i] = new
 
-#    for i, _ in enumerate(values):
-#        print "%03x" % nextValue(i)
 
-
-c = 0
+binaryCounter = 0
 
 def nextValue(idx):
     global values
-    global c
+    global binaryCounter
 
     if idx == 0:
         rx_desired = SYNC_VALUE_NOMINAL
 
-        values[1] = c & 0x3f
-        values[2] = (c >> 6) & 0x1f
-        values[3] = (c >> 11) & 0x1f
-        c = c + 1
-        prepareValues()
+        binaryCounter = binaryCounter + 1
+        prepareValues(binaryCounter)
     else:
         rx_desired = values[idx] << 5
-        #rx_desired = c << 5
-        #c += 1
-        #if c > 0x3f:
-        #    c = 0
         rx_desired += 0x20      # Add 0x20 to avoid tiny pulse durations
         rx_desired += (rx_desired >> 8)     
     rx = 2720 - 1 - rx_desired
     return rx * 16 / 17
-
-
-prepareValues()
 
 
 def crc16_ccitt(crc, byte):

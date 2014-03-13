@@ -110,13 +110,13 @@ void Output_LEDs(void)
     }
 
     mask = 1;
-    for (i = 0; i < 6; i++) {
-        light_data[i] = cachedValues[0] & mask ? LED_VALUE : 0;
+    for (i = 0; i < 5; i++) {
+        light_data[i] = cachedValues[2] & mask ? LED_VALUE : 0;
         mask = mask << 1;
     }
 
     mask = 1;
-    for (i = 6; i < 11; i++) {
+    for (i = 6; i < 10; i++) {
         light_data[i] = cachedValues[1] & mask ? LED_VALUE : 0;
         mask = mask << 1;
     }
