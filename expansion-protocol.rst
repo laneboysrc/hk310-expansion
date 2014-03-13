@@ -220,3 +220,26 @@ choose 4-wheel steering, 2-wheel steering, and crab mode.
 In a similar manner a dig can be implemented for rock crawlers with two motors
 and speed controllers.
 
+
+
+Other ideas to explore
+===============================================================================
+
+It is possible to get one more but out of the data channel by using two distinct
+SYNC values: 0xa40 and 0x980. Even with a mis-tuned oscillator it is possible
+to distinguish between those values and perform proper calibration.
+The advantage is that this bit does not cause further time delay in the 
+transfer path.
+The disadvantage is that the receiver code of parsing values and tuning the
+oscillator gets more complicated.
+
+
+
+ 
+
+
+
+
+
+
+
