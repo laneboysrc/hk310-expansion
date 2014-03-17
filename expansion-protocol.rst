@@ -242,6 +242,25 @@ pumps keeping running, unable to turn off horn sounds, etc.
 
 To get faster response for certain bits only, one would use the same bit in 
 all payload bytes. This should get response down to ~50ms.
+
+Merging it with the pre-processor protocol:
+The pre-processor would output the read value (= time value in us >> 5) as
+4th byte. During initialization it would check whether there are any sync \
+pulses. If yes it would turn off reporting CH3 in the 3rd byte and output
+the 4th byte. The sync value would be clamped to 0x52. Anything higher than
+0x3f is a sync value anyway. The pre-processor must be fast enough to send
+a package every 16ms when channel pulses repeat.
+The bit 6 will still be used to detect changes on subsequent payload bytes as
+the pre-processor shall not delay the other channels.
+The consumer of the pre-processor will perform the assembling of the payload. 
+The pre-processor would be independent of the number of payload bytes, but 
+the idea of two different sync pulses will affect it.
+This way the pre-processor would be forward and backwards compatible.
+The values range from 0x00 to 0x52 (sync pulse), hence it does not collide with
+the 0x80..0x87 sync values of the pre-processor protocol.
+
+
+
  
 
 
