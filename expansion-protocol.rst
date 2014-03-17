@@ -240,6 +240,8 @@ This would require special programming in the decoder, either hard-coded or
 via some form of UI. It would be very useful to avoid dangerous situations like
 pumps keeping running, unable to turn off horn sounds, etc.
 
+To get faster response for certain bits only, one would use the same bit in 
+all payload bytes. This should get response down to ~50ms.
  
 
 
