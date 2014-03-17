@@ -233,7 +233,12 @@ transfer path.
 The disadvantage is that the receiver code of parsing values and tuning the
 oscillator gets more complicated.
 
-
+Since the time between two sync pulses is relatively short we can implement
+a kind of failsafe mechanism that turns off certain outputs when connection
+is lost.
+This would require special programming in the decoder, either hard-coded or
+via some form of UI. It would be very useful to avoid dangerous situations like
+pumps keeping running, unable to turn off horn sounds, etc.
 
  
 
