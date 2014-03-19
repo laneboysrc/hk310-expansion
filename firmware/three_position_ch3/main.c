@@ -1,6 +1,6 @@
 /*****************************************************************************
 
-    analog-ch3
+    three-position-ch3
     
     This program converts CH3 of the HK310 transmitter from a two-position
     switch to a three-position switch.
