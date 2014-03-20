@@ -25,7 +25,6 @@
 #include "hk310-filter.h"
 #include "uart.h"
 
-
 static __code uint16_t __at (_CONFIG1) configword1 = _FOSC_INTOSC & _WDTE_OFF & _PWRTE_ON & _MCLRE_OFF & _CP_OFF & _CPD_OFF & _BOREN_OFF & _CLKOUTEN_OFF & _IESO_OFF & _FCMEN_OFF;
 static __code uint16_t __at (_CONFIG2) configword2 = _WRT_OFF & _PLLEN_OFF & _STVREN_OFF & _LVP_OFF; 
 
@@ -44,7 +43,7 @@ static void Init_hardware(void) {
     // IO Port initialization
     TRISA = 0b11111111;     // Make all ports A input
     ANSELA = 0b00000100;    // RA2 is analog in, all others are digital I/O
-    APFCON0 = 0b11000000;   // Use RA4/RA5 for UART TX/RX
+    APFCON = 0b10000100;    // Use RA4/RA5 for UART TX/RX
     
     ADCON0 = 0b00001001;    // ADC on, measure RA2
     ADCON1 = 0b11110000;    // Right justified, use FRC, VREF is VDD
