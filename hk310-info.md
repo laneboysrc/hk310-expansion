@@ -1,10 +1,10 @@
 HobbyKing HK310 and Turnigy X-3S deep-dive
-###############################################################################
+===
 
-
+Author: <laneboysrc@gmail.com>
 
 Introduction
-===============================================================================
+-----
 
 This document describes the internal functionality of the **HobbyKing HK310**
 transmitter. Most findings also apply to the **Turnigy X-3S** transmitter.
@@ -22,7 +22,7 @@ The MCU reads the sticks and switches, drives the display; it basically handles
 all user-facing functions of the transmitter.
 
 The MCU connects to the NRF module using a serial port (UART). See 
-`Serial port protocol`_ for details on the communication protocol.
+[Serial port protocol](#SerialPortProtocol) for details on the communication protocol.
 Because the MCU is operating at 5V and the NRF module at 3.3V, a simple 
 resistor divider of 1k/2.4k is placed in the Tx (MCU) / Rx (NRF module) path. 
 Note that the X-3S transmitter has a different MCU operating at 3.3V, so no
@@ -31,7 +31,7 @@ level shifting hardware is present.
 A 24C16A I2C EEPROM is connected to the NRF module. This EEPROM resides on the 
 transmitter PCB, not the NRF module. The EEPROM contains random bytes used
 to differentiate between different transmitters and models. 
-See `EEPROM contents`_ for more info.
+See [EEPROM contents](#EEPROMContents) for more info.
 
 Note that the transmitter PCB contains a second EEPROM that connects to the 
 MCU. This EEPROM is likely to hold the model data etc. but has not been
@@ -40,34 +40,33 @@ investigated yet.
 
 
 NRF module pin-out
-===============================================================================
+-----
 
-::
 
-  +--------------------------------------------------------------------------+
-  |   GND            Tx   GND                      O (Hole)                  |
-  |   o    o    o    o    o    o                                             |
-  |   GND  P0.2 PROG P0.3 NC   NC                                            |
-  |                                                                          |
-  |   3V3                                                                    |
-  |   o    o    o    o    o    o                                             |
-  |   VDD  P0.1 P0.0 P1.6 P1.5 NC                                            |
-  |  +--------------------------------------------------------------------+  |
-  |  |                                                                    |  |
-  |  |                                                                    |  |
-  |  |                                                                    |  |
-  |  |                                                                    |  |
-  |  |                                                                    |  |
-  |  +--------------------------------------------------------------------+  |
-  |   GND  3V3                                                               |
-  |   o    o    o    o    o    o                                             |
-  |   GND  VDD  P0.6 P1.1 P1.3 RESET                                         |
-  |                                                                          |
-  |   Rx             SCL  SDA  Tx-Off?                                       |
-  |   o    o    o    o    o    o                                             |
-  |   P0.4 P0.5 P0.7 P1.0 P1.2 P1.4                                          |
-  | O (Hole)                                                                 |
-  +--------------------------------------------------------------------------+
+        +--------------------------------------------------------------------------+
+        |   GND            Tx   GND                      O (Hole)                  |
+        |   o    o    o    o    o    o                                             |
+        |   GND  P0.2 PROG P0.3 NC   NC                                            |
+        |                                                                          |
+        |   3V3                                                                    |
+        |   o    o    o    o    o    o                                             |
+        |   VDD  P0.1 P0.0 P1.6 P1.5 NC                                            |
+        |  +--------------------------------------------------------------------+  |
+        |  |                                                                    |  |
+        |  |                                                                    |  |
+        |  |                                                                    |  |
+        |  |                                                                    |  |
+        |  |                                                                    |  |
+        |  +--------------------------------------------------------------------+  |
+        |   GND  3V3                                                               |
+        |   o    o    o    o    o    o                                             |
+        |   GND  VDD  P0.6 P1.1 P1.3 RESET                                         |
+        |                                                                          |
+        |   Rx             SCL  SDA  Tx-Off?                                       |
+        |   o    o    o    o    o    o                                             |
+        |   P0.4 P0.5 P0.7 P1.0 P1.2 P1.4                                          |
+        | O (Hole)                                                                 |
+        +--------------------------------------------------------------------------+
 
 P1.4 (Tx-Off?) goes to the amplifier chip in the NRF module. It has short pulses
 that repeat with about 200Hz. Speculation: this may be a kind of enable 
@@ -88,8 +87,8 @@ The X-3S uses different pins to connect to the EEPROM:
 
 
 
-Serial port protocol
-===============================================================================
+<a name="SerialPortProtocol"></a> Serial port protocol
+-----
 
 The serial port runs at **19200,N,8,1**.
 
@@ -99,24 +98,31 @@ is connected to the MCU in the transmitter, but there is no data being sent.
 Data is sent to the NRF module in **packets of 15 bytes**. The first three bytes
 indicate the packet type. There are two packet types in use:
 
-:``ff 55 aa``: Stick data and Failsafe 
-:``ff aa 55``: Model number
+``ff 55 aa``: Stick data and Failsafe 
+
+``ff aa 55``: Model number
 
 The Stick data and Failsafe packet structure is as follows:
 
-:Bytes 0..2:    Header (``ff 55 aa``)
-:Bytes 3..8:    Payload
-:Bytes 9, 10:   CRC16-CCITT of Payload
-:Bytes 11, 12:  Not used, seems to contain junk data. For stick data it is 
-                influenced by steering wheel only (not trim, etc!)
-                
-                - Left:   ``87 7c``
-                - Centre: ``e6 08``
-                - Right:  ``22 7c``
+>Bytes 0..2:    Header (``ff 55 aa``)
 
-                For Failsafe the value changes depending on which buttons are 
-                pressed.
-:Bytes 13, 14:  16-bit sum of bytes 3 to 10, MSB first
+>Bytes 3..8:    Payload
+
+>Bytes 9, 10:   CRC16-CCITT of Payload
+
+>Bytes 11, 12:  Not used, seems to contain junk data. For stick data it is 
+>influenced by steering wheel only (not trim, etc!)
+>
+>>Left:   ``87 7c``
+>>
+>>Centre: ``e6 08``
+>>
+>>Right:  ``22 7c``
+> 
+>For Failsafe the value changes depending on which buttons are pressed.
+
+>Bytes 13, 14:  16-bit sum of bytes 3 to 10, MSB first
+
 
 The first payload byte is always ``aa``. The high nibble of byte 4 is ``a`` for
 Stick data or ``b`` for Failsafe.
@@ -129,7 +135,7 @@ Note that this does not match the output rate of the receiver, which is 16ms
 
 
 Checksum algorithms 
----------------------------------------
+-----
 
 Data is protected with two checksums.
 
@@ -152,7 +158,7 @@ bogus values has no impact on the operation of the system :(
 
 
 Stick data
----------------------------------------
+-----
 
 Each channel is a 12 bit number. The highest nibbles are packed in bytes
 4 and 5, the low bytes are in bytes 6..8. 
@@ -163,11 +169,11 @@ Channel values 0x000 to 0x9ff generate a valid output pulse. Values above
 The forumla of how to determine the resulting pulse based on a given channel
 value is as follows::
 
-    rx_pulse = (tx_value - 2560) * 17 / 16
+        rx_pulse = (tx_value - 2560) * 17 / 16
 
 And to calculate a channel value for a desired pulse length::
 
-    tx_value = (2720 - rx_pulse) * 16 / 17
+        tx_value = (2720 - rx_pulse) * 16 / 17
 
 
 The generated pulses are unfortunately not very precise. There is a jitter
@@ -176,60 +182,63 @@ the pulses longer. In reality it means that the lower 5 bits are not usable
 for reliable transmission of binary data. 
 
 
-::
-
-                 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
-                -------------------------------------------- 
-    CH3 pos 0   ff 55 aa aa a4 42 94 7a 8a 34 15 e6 08 03 71
-    CH3 pos 1   ff 55 aa aa a4 46 94 7a 72 90 f3 e6 08 04 97
-    TH  fwd     ff 55 aa aa a4 22 94 71 8a b1 3d e6 08 03 ed
-    TH  back    ff 55 aa aa a4 52 94 dc 8a 98 6a e6 08 04 9c
-    ST  left    ff 55 aa aa a3 42 53 7a 8a f0 a6 87 7c 04 7c
-    ST  right   ff 55 aa aa a5 42 dc 7a 8a 2a 48 22 7c 03 e3
-    --------------------------------------------------------
-                             s t3 ss tt 33 cc cc XX XX kk kk
-                         yy yy yy yy yy yy                   checksum bytes: CRC16 = cc cc
-                         xx xx xx xx xx xx xx xx             checksum bytes: sum = kk kk
+                     0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
+                    -------------------------------------------- 
+        CH3 pos 0   ff 55 aa aa a4 42 94 7a 8a 34 15 e6 08 03 71
+        CH3 pos 1   ff 55 aa aa a4 46 94 7a 72 90 f3 e6 08 04 97
+        TH  fwd     ff 55 aa aa a4 22 94 71 8a b1 3d e6 08 03 ed
+        TH  back    ff 55 aa aa a4 52 94 dc 8a 98 6a e6 08 04 9c
+        ST  left    ff 55 aa aa a3 42 53 7a 8a f0 a6 87 7c 04 7c
+        ST  right   ff 55 aa aa a5 42 dc 7a 8a 2a 48 22 7c 03 e3
+        --------------------------------------------------------
+                                 s t3 ss tt 33 cc cc XX XX kk kk
+                             yy yy yy yy yy yy                   checksum bytes: CRC16 = cc cc
+                             xx xx xx xx xx xx xx xx             checksum bytes: sum = kk kk
 
 
 Failsafe
----------------------------------------
+-----
 
 Failsafe packets are only sent if the failsafe function is enabled for the
 current model. 
 
 Failsafe packets are transmitted after every 14 stick data transmissions.
 
-::
 
-             0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
-            -------------------------------------------- 
-            ff 55 aa aa bb cc 78 78 06 c9 e2 a5 09 04 d2
-            --------------------------------------------
-                              ss tt mm cc cc XX XX kk kk
-                     yy yy yy yy yy yy                   checksum bytes: CRC16 = cc cc
-                     xx xx xx xx xx xx xx xx             checksum bytes: sum = kk kk
+         0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
+        -------------------------------------------- 
+        ff 55 aa aa bb cc 78 78 06 c9 e2 a5 09 04 d2
+        --------------------------------------------
+                          ss tt mm cc cc XX XX kk kk
+                 yy yy yy yy yy yy                   checksum bytes: CRC16 = cc cc
+                 xx xx xx xx xx xx xx xx             checksum bytes: sum = kk kk
 
 
-:ss, tt:    Steering, throttle in percent. 
-            0x78 means 0%, 0x00 means -120%, 0xf0 means +120%
+ss, tt:
+>Steering, throttle in percent. 
+>
+>0x78 means 0%, 0x00 means -120%, 0xf0 means +120%
 
-:mm:        bit mask whether which channel is enabled for failsafe:
-            bit 0: steering
-            bit 1: throttle
-            bit 2: always 1 (CH3?)
+mm:
+>bit mask whether which channel is enabled for failsafe:
+>
+>bit 0: steering
+>
+>bit 1: throttle
+>
+>bit 2: always 1 (CH3?)
 
 
 The percentage value translates into the following pulse timings on the
-respective servo output::
+respective servo output:
             
-    +120%   +100%       0%    -100%    -120%
-     784us   904us   1540us   2120us   2240us
+        +120%   +100%       0%    -100%    -120%
+         784us   904us   1540us   2120us   2240us
 
 
 
 Model number
----------------------------------------
+-----
 
 This packet is sent after power on and every time a model is changed.
 
@@ -240,18 +249,20 @@ repeating it three times.
 Changing a model takes 197.3ms, then 3 model number commands are sent,
 and then the first Stick data (or Failsafe) packet after 168.1ms.
 
-::
 
-             0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
-            -------------------------------------------- 
-            ff aa 55 00 02 07 00 00 21 10 42 20 63 30 84 
-            ff aa 55 00 02 07 00 00 21 10 42 20 63 30 84 
-            ff aa 55 00 02 07 00 00 21 10 42 20 63 30 84 
-                        mm
+         0  1  2  3  4  5  6  7  8  9 10 11 12 13 14
+        -------------------------------------------- 
+        ff aa 55 00 02 07 00 00 21 10 42 20 63 30 84 
+        ff aa 55 00 02 07 00 00 21 10 42 20 63 30 84 
+        ff aa 55 00 02 07 00 00 21 10 42 20 63 30 84 
+                    mm
 
 
-:mm:     model code. mod0 = 0x02, mod15 = 0x11
-:rest:   unknown, but constant data independent of the model number
+mm:
+>model code. mod0 = 0x02, mod15 = 0x11
+
+rest:
+>unknown, but constant data independent of the model number
 
 The model code serves as index into the code data stored in the EEPROM
 that is connected to the NRF module.
@@ -259,8 +270,8 @@ that is connected to the NRF module.
 
 
 
-EEPROM contents
-===============================================================================
+<a name="EEPROMContents"></a> EEPROM contents
+-----
 
 The EEPROM connected to P0.7 (SCL) and P1.0 (SDA) contains binding data.
 **Note**: the EEPROM is connected to different pins on the X-3S: P0.6 = SDA, 
