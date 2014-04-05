@@ -14,9 +14,8 @@
 
     IMPORTANT:
     ==========
-    Many Arduino boards are running on 5V, while the NRF module runs
-    at 3.3V. Therefore level shifting is required on the TX pin of the 
-    Arduino to ensure the NRF module does not get damaged.
+    It is best to use a Arduino Pro Mini 3.3V version as on Arduino's with
+    built-in USB-to-serial converter the Tx/Rx pins could damage the HK310.
 
 *****************************************************************************/
 

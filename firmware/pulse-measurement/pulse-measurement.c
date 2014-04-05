@@ -5,6 +5,10 @@
 
    This program runs on the DIY RC Light Controller hardware using a 
    PIC16F1825 and a TLC5940.
+   Refer to https://github.com/laneboysrc/rc-light-controller
+   for a desciption of the DIY RC Light Controller project.
+
+   Use SDCC (http://sdcc.sourceforge.net/) to compile it.
        
    Port usage:
    ===========                                             

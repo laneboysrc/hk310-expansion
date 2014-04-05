@@ -5,6 +5,8 @@
 #   Modifies CH3 data in the HobbyKing HK310 or Turnigy X-3S transmitter
 #   on the fly.
 #
+#   Use a USB-to-serial dongle to connect the HK310 to a PC.
+#
 #******************************************************************************
 #
 #   Author:         Werner Lane

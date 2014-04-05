@@ -5,6 +5,8 @@
 #   This utility reads the UART input to the NRF24LE1G chip in the
 #   HobbyKing HK310 or Turnigy X-3S transmitter.
 #
+#   Use a USB-to-serial dongle to connect the HK310 to a PC.
+#
 #******************************************************************************
 #
 #   Author:         Werner Lane

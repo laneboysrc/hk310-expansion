@@ -2,6 +2,11 @@
 #
 #   receiver-dump.py
 #
+#   Reads the output of the UART of the software found in 
+#   firmware/pulse-measuremet/
+#
+#   Used for development and debugging.
+#
 #******************************************************************************
 #
 #   Author:         Werner Lane

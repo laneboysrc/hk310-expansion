@@ -6,6 +6,7 @@
     switch to a three-position switch.
     
     It is designed for the PIC12F1840 8-pin microcontroller.
+    Use SDCC (http://sdcc.sourceforge.net/) to compile it.
     
     Port usage:
     
