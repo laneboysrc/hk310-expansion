@@ -18,6 +18,9 @@ information on the three channels to the receiver. This allows for example to:
 - **Build your own custom transmitter** by just reusing the wireless
   module
 
+Check out the [YouTube video](http://youtu.be/DGuuogoRJkw) for a demo
+([http://youtu.be/DGuuogoRJkw](http://youtu.be/DGuuogoRJkw)).
+
 Sample programs for the **Arduino pro mini** are provided.
 
 Start by reading [hk310-info.md](hk310-info.md), which describes how 
