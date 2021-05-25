@@ -18,12 +18,9 @@ information on the three channels to the receiver. This allows for example to:
 - **Build your own custom transmitter** by just reusing the wireless
   module
 
-Check out the [YouTube video](http://youtu.be/DGuuogoRJkw) for a demo
-([http://youtu.be/DGuuogoRJkw](http://youtu.be/DGuuogoRJkw)).
-
 Sample programs for the **Arduino pro mini** are provided.
 
-Start by reading [hk310-info.md](hk310-info.md), which describes how 
+Start by reading [hk310-info.md](hk310-info.md), which describes how
 the HK310 works and how we can modify it.
 
 The `./logs` directory contains dumps of the serial communication within the
@@ -32,15 +29,15 @@ HK310, which was used to decode and understand the system.
 The document [expansion-protocol.md](expansion-protocol.md) proposes
 a way of how to add 16 on/off channels to the system.
 
-The `./firmware` directory contains source code for various sample programs, 
+The `./firmware` directory contains source code for various sample programs,
 such as changing the AUX channel to a three position switch or an analog
 channel. Code is available for **Arduino** as well as for **Microchip PIC**.
 
-`./transmitter-eeprom-contents` and `./receiver-eeprom-contents` contain dumps 
-of the EEPROM that is connected to the NRF module and in the receiver 
+`./transmitter-eeprom-contents` and `./receiver-eeprom-contents` contain dumps
+of the EEPROM that is connected to the NRF module and in the receiver
 respectively, which contains the unique binding data.
 
-Several Python programs are available that are useful to work directly 
+Several Python programs are available that are useful to work directly
 on a PC without having to use a microcontroller.
 
 
